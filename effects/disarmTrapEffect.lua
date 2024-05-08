@@ -7,6 +7,16 @@ local disarmID = 23334
 
 tes3.claimSpellEffectId("bsDisarm", disarmID)
 
+
+local function vfx(target, isSuccess) --Function to handle vfx/sound, false = failed
+    --Still not clicking, but this is a boolean check, if isSuccess == true the sound it "Disarm Trap" else its "...Fail"
+    local sound = isSuccess and "Disarm Trap" or "Disarm Trap Fail"
+
+    tes3.playSound({ sound = sound })      --Play disarm/fail sound
+    tes3.playSound({ sound = "alteration hit", volume = 0.75 }) --Play hit sound at a lower volume
+    tes3.createVisualEffect({ lifespan = 1, reference = target, magicEffectId = disarmID, })
+end
+
 ---@param target tes3reference
 local function disarmEffect(target, disarmMag) --Shoved into a function to make it work for Touch spells too, hopefully it doesnt break anything
     if target.object.objectType == tes3.objectType.container or target.object.objectType == tes3.objectType.door then
@@ -30,15 +40,13 @@ local function disarmEffect(target, disarmMag) --Shoved into a function to make 
             if disarmMag >= disarmChance then
                 tes3.setTrap({ reference = target, spell = nil })
                 tes3.game:clearTarget()                        --Update tooltip
-                tes3.playSound({ sound = "Disarm Trap" })      --Play disarm sound
-                tes3.playSound({ sound = "alteration hit", volume = 0.75 })
 
-                tes3.createVisualEffect({ lifespan = 1, reference = target, magicEffectId = disarmID, }) --Play the effects ve on the target
+                vfx(target, true) --vfx function
             else
-                tes3.createVisualEffect({ lifespan = 1, reference = target, magicEffectId = disarmID, })
-                tes3.playSound({ sound = "Disarm Trap Fail" }) --Play fail sound on fail
-                tes3.playSound({ sound = "alteration hit", volume = 0.75 })
+                vfx(target, false)
             end
+        else
+            vfx(target, false)
         end
     end
 end
@@ -48,21 +56,11 @@ end
 local function onDisarmCollision(e)
     if e.collision then
         local target = e.collision.colliderRef
-        -- local disarmMag
-        
+
         --Get disarm mag even if its in a custom spell
         local complexMag = effectMaker.getComplexMag(e, disarmID)
-
-        log:debug("FUNCTION complexMag = %s", complexMag)
-
-        
-        -- for _, effects in ipairs(e.sourceInstance.sourceEffects) do
-        --     if effects.id == tes3.effect.bsDisarm then
-        --         disarmMag = effectMaker.getMag(effects) -- set disarmMag to bsDisarms effectiveMag
-        --         log:debug("FOR DisarmMag - %s", disarmMag)
-        --     end
-        -- end
         disarmEffect(target, complexMag)
+
     end
 end
 
