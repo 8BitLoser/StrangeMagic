@@ -32,23 +32,23 @@ local function addEffects()
         onTick = function (e)
             if e.effectInstance.state == tes3.spellState.working then e:trigger() return end
 
-            log:debug("state = %s", e.effectInstance.state)
-            log:debug("duration - %s", e.sourceInstance.sourceEffects[1].duration)
+            -- log:debug("state = %s", e.effectInstance.state)
+            -- log:debug("duration - %s", e.sourceInstance.sourceEffects[1].duration)
 
 
             local startArmor = false
             if e.effectInstance.state == tes3.spellState["beginning"] then
                 e:trigger() e:trigger()
 
-                --------------------------------------debug------------------------------------------------------
-                log:debug("target = %s", e.effectInstance.target.object.name)
-                local mag = e.effectInstance.effectiveMagnitude
-                local duration = e.sourceInstance.sourceEffects[1].duration or 1
                 local eWeap = tes3.getEquippedItem({actor = tes3.player, objectType = tes3.objectType.weapon})
-                log:debug("mag -%s, dur - %s, tDur -%s, iter - %s",mag, duration, 1/ duration, duration * mag)
+                --------------------------------------debug------------------------------------------------------
+                -- log:debug("target = %s", e.effectInstance.target.object.name)
+                -- local mag = e.effectInstance.effectiveMagnitude
+                -- local duration = e.sourceInstance.sourceEffects[1].duration or 1
+                -- log:debug("mag -%s, dur - %s, tDur -%s, iter - %s",mag, duration, 1/ duration, duration * mag)
                 -------------------------------------------------------------------------------------------------
                 if eWeap then
-                    log:debug("mag = %s",e.effectInstance.effectiveMagnitude)
+                    -- log:debug("mag = %s",e.effectInstance.effectiveMagnitude)
                     bs.effectTimer(e, function()
                         eWeap.itemData.condition = math.min(eWeap.itemData.condition + 1, eWeap.object.maxCondition)
                         log:debug("eWeap - %s, c - %s, mC = %s", eWeap.object.name, eWeap.itemData.condition + 1, eWeap.object.maxCondition)
@@ -60,7 +60,7 @@ local function addEffects()
                 else startArmor = true
                 end
 
-                log:debug("startArmor - %s", startArmor)
+                -- log:debug("startArmor - %s", startArmor)
 
                 if startArmor then
                     for i, slot in ipairs(slotPriorities) do
@@ -70,13 +70,13 @@ local function addEffects()
                             slot = slot,
                         })
                         if armor and armor.itemData.condition < armor.object.maxCondition then
-                            local condition = armor.itemData.condition     --Get items condition
-                            local maxCondition = armor.object.maxCondition --Get items max condition
-
-                            log:debug("stack = %s, c - %s, mC - %s", armor.object.name, condition, maxCondition)
-
+                            --------------------------------------Debug-------------------------------------
+                            -- local condition = armor.itemData.condition     --Get items condition
+                            -- local maxCondition = armor.object.maxCondition --Get items max condition
+                            -- log:debug("stack = %s, c - %s, mC - %s", armor.object.name, condition, maxCondition)
+                            --------------------------------------------------------------------------------
                             bs.effectTimer(e, function()
-                                log:debug("i - %s", i)
+                                -- log:debug("i - %s", i)
                                 armor.itemData.condition = math.min(armor.itemData.condition + 1, armor.object.maxCondition)
                                 log:debug("armor - %s, c - %s, mC = %s", armor.object.name, armor.itemData.condition, armor.object.maxCondition)
                             end)
@@ -88,7 +88,7 @@ local function addEffects()
 
             if e.effectInstance.state == tes3.spellState.ending then
                 e.effectInstance.state = tes3.spellState.retired
-                log:debug("ending")
+                -- log:debug("ending")
             end
         end
     })
