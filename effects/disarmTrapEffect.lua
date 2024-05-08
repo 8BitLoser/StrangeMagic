@@ -1,11 +1,15 @@
+-- local effectMaker = require("BeefStranger.StrangeMagic.common")
+-- local logger = require("logging.logger")
+-- local log = logger.new { name = "StrangeMagic", logLevel = "DEBUG", logToConsole = true, }
 local bs = require("BeefStranger.functions")
 local effectMaker = require("BeefStranger.effectMaker")
-local logger = require("logging.logger")
-local log = logger.getLogger("StrangeMagic") or "Logger Not Found"
+
+local log = require("BeefStranger.StrangeMagic.common").log
+
 
 local disarmID = 23334
 
-tes3.claimSpellEffectId("bsDisarm", disarmID)
+tes3.claimSpellEffectId("effectMakerDisarm", disarmID)
 
 
 local function vfx(target, isSuccess) --Function to handle vfx/sound, false = failed
@@ -36,7 +40,7 @@ local function disarmEffect(target, disarmMag) --Shoved into a function to make 
                   --  log:debug("Trap: %d, trapMag: %s, trapDur: %s, Lock Level: %s", i, effectiveMag, trapDuration, (target.lockNode.level * 0.25))
                 end
             end
-           -- log:debug("disarmMag = %s, disarmChance: %s", disarmMag, disarmChance)
+           log:debug("disarmMag = %s, disarmChance: %s", disarmMag, disarmChance)
             if disarmMag >= disarmChance then
                 tes3.setTrap({ reference = target, spell = nil })
                 tes3.game:clearTarget()                        --Update tooltip
@@ -57,8 +61,25 @@ local function onDisarmCollision(e)
     if e.collision then
         local target = e.collision.colliderRef
 
+        
+
+        -- log:debug("%s", target.mobile.object.name)
+
         --Get disarm mag even if its in a custom spell
         local complexMag = effectMaker.getComplexMag(e, disarmID)
+        local magTimer = (complexMag / 10)
+
+        if target.mobile.readiedWeapon then
+            local saveWeap = target.mobile.readiedWeapon.object
+
+            tes3.removeItem { reference = target, item = saveWeap }
+            log:debug("remove %s from %s: starting %ss timer", saveWeap, target, magTimer)
+
+            bs.timer(magTimer, 1, function()
+                tes3.addItem { reference = target, item = saveWeap }
+                log:debug("Re-add %s to %s", saveWeap, target)
+            end)
+        end
         disarmEffect(target, complexMag)
 
     end
@@ -73,7 +94,7 @@ local function onDisarmTouch(e)
     if touchTarget == nil then return end
 
     for _, effects in ipairs(e.source.effects) do
-        if effects.id == tes3.effect.bsDisarm then
+        if effects.id == tes3.effect.effectMakerDisarm then
             if effects.rangeType == tes3.effectRange.touch then
                 touchMag = effectMaker.getMag(effects)
 
@@ -86,8 +107,8 @@ end
 event.register(tes3.event.spellCasted, onDisarmTouch)
 
 local function addEffects()
-    local bsDisarm = effectMaker.create({
-        id = tes3.effect.bsDisarm,
+    local effectMakerDisarm = effectMaker.create({
+        id = tes3.effect.effectMakerDisarm,
         name = "Disarm Effect",
         school = tes3.magicSchool["alteration"],
         baseCost = 15,
