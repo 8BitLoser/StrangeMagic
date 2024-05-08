@@ -3,14 +3,17 @@
 local logger = require("logging.logger")
 local log = logger.new { name = "StrangeMagic", logLevel = "DEBUG", logToConsole = true, }
 -- if config.debug then log:setLogLevel("DEBUG") end
+-- local log = require("BeefStranger.StrangeMagic.common").log
 --=============================Config/Logging================================--
+-- require("BeefStranger.StrangeMagic.common")
 
-local bs = require("BeefStranger.functions") --Not used yet
-local spellMaker = require("BeefStranger.spellMaker")
-
-require("BeefStranger.StrangeMagic.effects.transposeEffect")
-require("BeefStranger.StrangeMagic.effects.repairEffect")
 require("BeefStranger.StrangeMagic.effects.disarmTrapEffect")
+require("BeefStranger.StrangeMagic.effects.repairEffect")
+require("BeefStranger.StrangeMagic.effects.stumbleEffect")
+require("BeefStranger.StrangeMagic.effects.transposeEffect")
+
+local bs = require("BeefStranger.functions")
+local spellMaker = require("BeefStranger.spellMaker")
 
 local function initialized()
     print("[MWSE:StrangeMagic initialized]")
@@ -55,75 +58,52 @@ local function addSpells()
    tes3.addSpell({ reference = tes3.mobilePlayer, spell = "bsTranspose" })
    tes3.addSpell({ reference = tes3.mobilePlayer, spell = "bsRepair" })
    tes3.addSpell({ reference = tes3.mobilePlayer, spell = "bsDisarm" })
-   tes3.mobilePlayer:equipMagic { source = "bsTranspose" }
+   tes3.mobilePlayer:equipMagic { source = "bsDisarm" }
 end
 event.register(tes3.event.loaded, addSpells)
 
--- local objectTypeNames = {
---     [1230259009] = "activator",
---     [1212369985] = "alchemy",
---     [1330466113] = "ammunition",
---     [1095782465] = "apparatus",
---     [1330467393] = "armor",
---     [1313297218] = "birthsign",
---     [1497648962] = "bodyPart",
---     [1263488834] = "book",
---     [1280066883] = "cell",
---     [1396788291] = "class",
---     [1414483011] = "clothing",
---     [1414418243] = "container",
---     [1095062083] = "creature",
---     [1279347012] = "dialogue",
---     [1330007625] = "dialogueInfo",
---     [1380929348] = "door",
---     [1212370501] = "enchantment",
---     [1413693766] = "faction",
---     [1414745415] = "gmst",
---     [1380404809] = "ingredient",
---     [1145979212] = "land",
---     [1480938572] = "landTexture",
---     [1129727308] = "leveledCreature",
---     [1230390604] = "leveledItem",
---     [1212631372] = "light",
---     [1262702412] = "lockpick",
---     [1178945357] = "magicEffect",
---     [1129531725] = "miscItem",
---     [1413693773] = "mobileActor",
---     [1380139341] = "mobileCreature",
---     [1212367181] = "mobileNPC",
---     [1346584909] = "mobilePlayer",
---     [1246908493] = "mobileProjectile",
---     [1347637325] = "mobileSpellProjectile",
---     [1598246990] = "npc",
---     [1146242896] = "pathGrid",
---     [1112494672] = "probe",
---     [1397052753] = "quest",
---     [1162035538] = "race",
---     [1380336978] = "reference",
---     [1313293650] = "region",
---     [1095779666] = "repairItem",
---     [1414546259] = "script",
---     [1279871827] = "skill",
---     [1314213715] = "sound",
---     [1195658835] = "soundGenerator",
---     [1279610963] = "spell",
---     [1380143955] = "startScript",
---     [1413567571] = "static",
---     [1346454871] = "weapon"
--- }
 local function onKeyDownI()
     if not tes3.menuMode()then
         -- log:debug("I Pressed")
-        local target = tes3.getPlayerTarget()
-        if not target then return end
+        local target = bs.rayCast(900)
+        if not target or not target.mobile then return end
+        local saveWeap
 
-        local typeName = bs.objectTypeNames[target.object.objectType] or "Unknown Type"
-        log:debug("%s, tes3.objectType.%s", target.object.id, typeName)
+        if target.mobile.readiedWeapon and target.mobile.readiedWeapon.object then
+            saveWeap = target.mobile.readiedWeapon.object
+            local iter = 0
+
+            tes3.removeItem{reference = target, item = saveWeap}
+            log:debug("remove %s from %s: starting 10s timer", saveWeap, target)
+            ---for testing, better to just do (10, 1, function)
+            local itemTimer = bs.timer(1, 10, function()
+
+                iter = iter + 1
+
+                log:debug("%s", iter)
+
+                if iter == 10 then
+                    tes3.addItem{reference = target, item = saveWeap}
+                    log:debug("Re-add %s to %s", saveWeap, target)
+                end
+            end)
+        end
+
+        -- mobile:unequip({type = tes3.objectType.weapon})
+
+        -- toggleWeapon(target)
+
+        -- target.mobile:hitStun({knockDown = true})
+        tes3.messageBox("Zap!")
+
+        -- local typeName = bs.objectTypeNames[target.mobile.object.objectType] or "Unknown Type"
+        -- log:debug("%s, tes3.objectType.%s", target.mobile.object.id, typeName)
+        -- log:debug("%s, %s", target.mobile.object.name, target.mobile. readiedWeapon and target.mobile.readiedWeapon.object or "no weapon")
         -- log:debug("%s trap %s, locked %s, trapNode %s", target.object.name, target.lockNode.trap, target.lockNode.locked, target.lockNode)
         -- log:debug("objectFaction %s, playerFaction %s",target.object.faction[1].name, tes3.player.object.faction)
 
     end
 end
 
-event.register("keyUp", onKeyDownI, { filter = tes3.scanCode["i"] })
+event.register("keyDown", onKeyDownI, { filter = tes3.scanCode["i"] })
 
