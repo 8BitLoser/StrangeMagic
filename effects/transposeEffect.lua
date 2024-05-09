@@ -3,6 +3,9 @@ local effectMaker = require("BeefStranger.effectMaker")
 local logger = require("logging.logger")
 local log = logger.getLogger("StrangeMagic") or "Logger Not Found"
 
+local transpose = require("BeefStranger.StrangeMagic.common").transpose --Experimenting with centralized effect list
+
+-- tes3.claimSpellEffectId("bsTranspose", transpose.id)
 --Boolean Table of loose item objectTypes
 local itemTypes = {
     [tes3.objectType.armor] = true,
@@ -93,7 +96,7 @@ end
 
 local function transfer(ref) ---@param ref tes3reference Just a little function to transfer/play effect if refCheck true
     if refCheck(ref) then
-        tes3.createVisualEffect({ lifespan = 1, reference = ref, magicEffectId = 23336, })
+        tes3.createVisualEffect({ lifespan = 1, reference = ref, magicEffectId = transpose.id, })
         --log:debug("playing effect on %s",ref.object.name)
         tes3.transferInventory({from = ref, to = tes3.mobilePlayer})
         --log:debug("transfering from %s",ref.object.name)
@@ -122,16 +125,16 @@ local function teleport(ref)---@param ref tes3reference Function to handle rando
     end
 end
 
-tes3.claimSpellEffectId("bsTranspose", 23336)
+
 --Transpose effect : Loot items from in radius of collision
 ---@param e tes3magicEffectCollisionEventData
-local function onTranspose(e) 
+local function onTranspose(e)
     if e.collision then
         local closest = nil --Variable for storing the nearest item if nothing was in range
 
         for ref in e.collision.colliderRef.cell:iterateReferences(iterateRefs) do --Set ref to every object in cell, that matches a type in iterateRefs table
             local distance = (e.collision.point:distance(ref.position) / 22.1)    --The distance between the collision point and the position of the iterated ref
-            local range = math.max((bs.getEffect(e, 23336).radius + 1.5), 1.5)    --Range is either the effect radius + 1.5 or 1.5, whatever is bigger
+            local range = math.max((bs.getEffect(e, transpose.id).radius + 1.5), 1.5)    --Range is either the effect radius + 1.5 or 1.5, whatever is bigger
             local inRange = (distance <= range)                                   --Returns true if distance to ref is in range of the spell
 
             --Note about range/radius, things can be hit in the visual radius but outside of the actual radius,
@@ -164,7 +167,7 @@ end
 
 local function addEffects()
     local bsTranspose = effectMaker.create({
-        id = tes3.effect.bsTranspose,
+        id = transpose.id,
         name = "Transposistion",
         school = tes3.magicSchool["mysticism"],
 

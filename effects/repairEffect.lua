@@ -3,7 +3,7 @@ local effectMaker = require("BeefStranger.effectMaker")
 local logger = require("logging.logger")
 local log = logger.getLogger("StrangeMagic") or "Logger Not Found"
 
-tes3.claimSpellEffectId("repairEffect", 23331)
+-- tes3.claimSpellEffectId("repairEffect", 23331)
 
 --Greatness7
 local slotPriorities = {

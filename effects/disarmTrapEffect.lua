@@ -7,9 +7,9 @@ local effectMaker = require("BeefStranger.effectMaker")
 local log = require("BeefStranger.StrangeMagic.common").log
 
 
-local disarmID = 23334
+local disarmID = 23332
 
-tes3.claimSpellEffectId("effectMakerDisarm", disarmID)
+-- tes3.claimSpellEffectId("effectMakerDisarm", disarmID)
 
 
 local function vfx(target, isSuccess) --Function to handle vfx/sound, false = failed
@@ -75,10 +75,10 @@ local function onDisarmCollision(e)
             tes3.removeItem { reference = target, item = saveWeap }
             log:debug("remove %s from %s: starting %ss timer", saveWeap, target, magTimer)
 
-            bs.timer(magTimer, 1, function()
+            bs.timer{dur = magTimer, cb = function()
                 tes3.addItem { reference = target, item = saveWeap }
                 log:debug("Re-add %s to %s", saveWeap, target)
-            end)
+            end}
         end
         disarmEffect(target, complexMag)
 
@@ -108,7 +108,7 @@ event.register(tes3.event.spellCasted, onDisarmTouch)
 
 local function addEffects()
     local effectMakerDisarm = effectMaker.create({
-        id = tes3.effect.effectMakerDisarm,
+        id = tes3.effect.disarmEffect,
         name = "Disarm Effect",
         school = tes3.magicSchool["alteration"],
         baseCost = 15,
