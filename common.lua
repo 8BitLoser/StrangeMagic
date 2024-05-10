@@ -6,7 +6,8 @@ function common.imports()
     require("BeefStranger.StrangeMagic.effects.repairEffect"),
     require("BeefStranger.StrangeMagic.effects.stumbleEffect"),
     require("BeefStranger.StrangeMagic.effects.transposeEffect"),
-    require("BeefStranger.StrangeMagic.effects.gravityEffect")
+    require("BeefStranger.StrangeMagic.effects.suffocateEffect"),
+    require("BeefStranger.StrangeMagic.effects.enchantLearn")
 end
 
 
@@ -35,18 +36,23 @@ common.stumble = {
     id = 23334,
 }
 
-common.gravity = {
-    name = "gravityEffect",
+common.suffocate = {
+    name = "suffocateEffect",
     id = 23335
 }
 
+common.learn = {
+    name = "enchantLearn",
+    id = 23336
+}
 
 
 tes3.claimSpellEffectId(common.repair.name, common.repair.id)
 tes3.claimSpellEffectId(common.disarm.name, common.disarm.id)
 tes3.claimSpellEffectId(common.transpose.name, common.transpose.id)
 tes3.claimSpellEffectId(common.stumble.name, common.stumble.id)
-tes3.claimSpellEffectId(common.gravity.name, common.gravity.id)
+tes3.claimSpellEffectId(common.suffocate.name, common.suffocate.id)
+tes3.claimSpellEffectId(common.learn.name, common.learn.id)
 
 
 

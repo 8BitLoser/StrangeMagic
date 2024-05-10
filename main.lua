@@ -18,7 +18,7 @@ event.register(tes3.event.initialized, initialized)
 local function registerSpells()
     bs.spell.create({
         id = "bsTranspose",
-        name = "Transposistion",
+        name = "transposition Test",
         effect = info.transpose.id,
         alwaysSucceeds = true,
         min = 25,
@@ -27,8 +27,8 @@ local function registerSpells()
     })
 
     bs.spell.create({
-        id = "bsRepair",
-        name = "Repair",
+        id = info.repair.name,
+        name = "Repair Test",
         effect = info.repair.id,
         alwaysSucceeds = true,
         min = 1,
@@ -37,7 +37,7 @@ local function registerSpells()
     })
 
     bs.spell.create({
-        id = "bsDisarm",
+        id = info.disarm.name,
         name = "Disarm Test",
         effect = info.disarm.id,
         -- alwaysSucceeds = true,
@@ -47,7 +47,7 @@ local function registerSpells()
     })
 
     bs.spell.create({
-        id = "stumbleEffect",
+        id = info.stumble.name,
         name = "Stumble Test",
         effect = info.stumble.id,
         radius = 20,
@@ -58,11 +58,13 @@ local function registerSpells()
     })
 
     bs.spell.create{
-        id = "gravity",
-        name = "Gravity Test",
-        effect = info.gravity.id,
-        min = 1,
-        range = tes3.effectRange.target
+        id = info.learn.name,
+        name = "Suffocate Test",
+        effect = info.learn.id,
+        min = 2,
+        range = tes3.effectRange.target,
+        alwaysSucceeds = true,
+        duration = 5,
     }
 
 end
@@ -73,20 +75,24 @@ local function addSpells()
    tes3.addSpell({ reference = tes3.mobilePlayer, spell = "bsRepair" })
    tes3.addSpell({ reference = tes3.mobilePlayer, spell = "bsDisarm" })
    tes3.addSpell({ reference = tes3.mobilePlayer, spell = "stumbleEffect" })
-   tes3.addSpell({ reference = tes3.mobilePlayer, spell = "gravity" })
-   tes3.mobilePlayer:equipMagic { source = "gravity" }
+   tes3.addSpell({ reference = tes3.mobilePlayer, spell = "suffocateEffect" })
+   tes3.mobilePlayer:equipMagic { source = "suffocateEffect" }
 end
 event.register(tes3.event.loaded, addSpells)
 
 local function onKeyDownI()
     if not tes3.menuMode()then
-        -- log:debug("I Pressed")
-        local target = bs.rayCast(900)
-        if not target or not target.mobile then return end
 
-        tes3.messageBox("Zap!")
+
+
+
+
+        -- -- log:debug("I Pressed")
+        -- local target = bs.rayCast(900)
+        -- if not target or not target.mobile then return end
+
+        -- tes3.messageBox("Zap!")
     end
 end
-
 event.register("keyDown", onKeyDownI, { filter = tes3.scanCode["i"] })
 
