@@ -58,13 +58,23 @@ local function registerSpells()
     })
 
     bs.spell.create{
-        id = info.learn.name,
+        id = info.suffocate.name,
         name = "Suffocate Test",
-        effect = info.learn.id,
+        effect = info.suffocate.id,
         min = 2,
         range = tes3.effectRange.target,
         alwaysSucceeds = true,
         duration = 5,
+    }
+
+    bs.spell.create{
+        id = info.learn.name,
+        name = "Learn Test",
+        effect = info.learn.id,
+        min = 2,
+        range = tes3.effectRange.self,
+        alwaysSucceeds = true,
+        -- duration = 5,
     }
 
 end
@@ -76,14 +86,14 @@ local function addSpells()
    tes3.addSpell({ reference = tes3.mobilePlayer, spell = "bsDisarm" })
    tes3.addSpell({ reference = tes3.mobilePlayer, spell = "stumbleEffect" })
    tes3.addSpell({ reference = tes3.mobilePlayer, spell = "suffocateEffect" })
-   tes3.mobilePlayer:equipMagic { source = "suffocateEffect" }
+   tes3.addSpell({ reference = tes3.mobilePlayer, spell = info.learn.name })
+   tes3.mobilePlayer:equipMagic { source = info.learn.name }
 end
 event.register(tes3.event.loaded, addSpells)
 
 local function onKeyDownI()
     if not tes3.menuMode()then
-
-
+        
 
 
 

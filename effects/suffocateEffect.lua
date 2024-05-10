@@ -6,7 +6,7 @@ local bs = require("BeefStranger.functions")
 bs.debug(true)
 
 local log = info.log
-local suffocate = info.learn
+local suffocate = info.suffocate
 
 ---@param e tes3magicEffectCollisionEventData
 local function onSuffocateCol(e)
