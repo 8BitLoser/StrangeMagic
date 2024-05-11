@@ -15,32 +15,35 @@ local enchantable = {
 }
 
 local function createSpell(items) ----Need to make spell with every effect not just first
-    log:debug("name %s: id %s", tostring(items.name), items.id)
     ---Table so I can add all effects to spell.create
     local spellData = {
-        id = '"'..items.id.. '"',
-        name = "(E) "..items.enchant.object.name,
+        -- id = '"'..items.id.. '"',
+        id = string.format("%q", items.id),
+        name = string.format("(E) %s", items.enchant.object.name),
+        -- name = "(E) "..items.enchant.object.name,
+        --name = bs.string("(E) %s", items.enchant.object.name),
     }
     ---Add effect min and max to the spellData table, does it in this format (effect or effect2-8)
     for i, effect in ipairs(items.effect)do
         spellData["effect"..(i == 1 and "" or i)] = effect.id --effect (if 1 then its just effect, if i is more than 1 than it gets added to effect (effect2))
         spellData["min"..(i == 1 and "" or i)] = effect.min
         spellData["max"..(i == 1 and "" or i)] = effect.max
-        spellData["duration"..(i == 1 and "" or i)] = effect.duration
+
+        if items.castType == 3 then --
+            spellData["duration"..(i == 1 and "" or i)] = 60 ---@type integer
+        else
+            spellData["duration"..(i == 1 and "" or i)] = effect.duration ---@type integer
+        end
     end
 
     local spell = bs.spell.create(spellData)
-    ---Update spell cost
-    spell.magickaCost = math.clamp(bs.spell.calculateEffectCost(spell), 5, 100)
-    -- local spell = bs.spell.create{
-    --     id = '"'..items.id.. '"',
-    --     name = "(E) "..items.enchant.object.name,
-    --     effect = items.enchantment,
-    --     min = 10, --Needs to be set by enchantment
-    --    -- cost = , math.clamp? make min and max with bs.spell.calculate
-    -- }
-    -- spell.magickaCost = math.clamp(bs.spell.calculateEffectCost(spell), 5, 100)
-    -- -- log:debug("createSpell - %s", items.enchantment.)
+
+    ----Get enchantmentType for making constant effects cheaper and better
+    if items.castType == 3 then
+        spell.magickaCost = math.clamp(bs.spell.calculateEffectCost(spell), 5, 300)
+    else
+        spell.magickaCost = math.clamp(bs.spell.calculateEffectCost(spell), 5, 150)
+    end
     return spell
 end
 
@@ -71,12 +74,12 @@ local function getEnchanted()
                 id = item.id,
                 name = item.name,
                 effect = effects,
+                castType = item.enchantment.castType,
                 enchant = item.enchantment.effects[1],
-                enchantment = item.enchantment.effects[1].id,
+                enchantment = item.enchantment,
             })
             -- log:debug("%s - %s - %s", item.name, enchantedItems.effect.min, item.enchantment.effects[1].cost)
         end
-
     end
     return enchantedItems
 end
@@ -88,16 +91,15 @@ local function enchantButtons()
     for _, eItem in ipairs(enchantedItems) do
         local effect = eItem.enchant
         table.insert(buttons, {
-            text = eItem.name .. " - " .. effect.object.name,
-            callback = function()
 
-                log:debug(eItem.name .. " - " .. eItem.enchantment.. " - "..effect.object.name)
-                tes3.messageBox(eItem.name .. " - " .. eItem.enchantment.. " - ".. effect.object.name)
+            text = string.format("%s - %s", eItem.name, effect.object.name),
+            -- text = eItem.name .. " - " .. effect.object.name,
+            callback = function()
+                -- log:debug(eItem.name .. " - " .. eItem.enchant.id.. " - "..effect.object.name)
                 tes3.removeItem{reference = tes3.mobilePlayer, item = eItem.id}
                 tes3.addSpell({ reference = tes3.mobilePlayer, spell = createSpell(eItem) })
                 tes3.playSound{sound = bs.sound.enchant_success}
                 tes3.playSound{sound = bs.sound.Pack, volume = 0.8, pitch = 1.5}
-
             end
         })
     end
@@ -118,7 +120,6 @@ local function onLearnTick(e)
 
      bs.onTick(e, function()
         local buttons = enchantButtons()
-
         tes3ui.showMessageMenu { message = "Enchanted Items", buttons = buttons, cancels = true }
     end)
 end
@@ -145,7 +146,6 @@ local function onKeyDownI()
         for _, eItem in ipairs(enchanted) do
             log:debug("%s, %s, %s", eItem.enchant.object.name, eItem.enchant.min, eItem.enchant.max)
         end
-
     end
 end
 event.register("keyDown", onKeyDownI, { filter = tes3.scanCode["i"] })
