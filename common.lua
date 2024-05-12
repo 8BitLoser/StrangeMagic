@@ -11,10 +11,15 @@ function common.imports()
 end
 
 
-
 common.logger = require("logging.logger")
-common.log = common.logger.getLogger("StrangeMagic") or "Logger Not Found"
+common.log = common.logger.getLogger("StrangeMagic") or ""
 
+--- Just a shorthand for log.debug()
+--
+---     local debug = common.debug
+function common.debug(...)
+    common.log:debug(...)
+end
 
 common.repair = {
     name = "repairEffect",

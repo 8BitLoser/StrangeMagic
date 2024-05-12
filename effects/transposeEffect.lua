@@ -1,13 +1,13 @@
 local bs = require("BeefStranger.functions")
-local effectMaker = require("BeefStranger.effectMaker")
-local logger = require("logging.logger")
-local log = logger.getLogger("StrangeMagic") or "Logger Not Found"
+local info = require("BeefStranger.StrangeMagic.common")
 
-local transpose = require("BeefStranger.StrangeMagic.common").transpose --Experimenting with centralized effect list
+local debug = info.debug
+local transpose = info.transpose --Experimenting with centralized effect list
 
 -- tes3.claimSpellEffectId("bsTranspose", transpose.id)
 --Boolean Table of loose item objectTypes
 local itemTypes = {
+    [tes3.objectType.apparatus] = true,
     [tes3.objectType.armor] = true,
     [tes3.objectType.book] = true,
     [tes3.objectType.clothing] = true,
@@ -43,11 +43,13 @@ local function addItem(ref) ---@param ref tes3reference Add item to player then 
     if itemTypes[ref.object.objectType] and (ref.deleted == false) then --If the item is in the list and not marked deleted
         if ref.object.name == "Gold" then                               --Gold piles dont work right, so i have to do this
             tes3.addItem({ reference = tes3.mobilePlayer, item = ref.object, count = ref.object.value })
-            ----log:debug("Looting Gold - %s", ref.object.value)
+            tes3.playSound{sound = bs.bsSound.fantasyUI5}
+            ----debug("Looting Gold - %s", ref.object.value)
             ref:delete()
         else --Add the item to the player, then delete the item
             tes3.addItem({ reference = tes3.mobilePlayer, item = ref.object, count = ref.stackSize })
-            ----log:debug("Looting item - %s - %s", ref.object.name, ref.stackSize)
+            tes3.playSound{sound = bs.bsSound.fantasyUI5}
+            ----debug("Looting item - %s - %s", ref.object.name, ref.stackSize)
             ref:delete()
         end
     end
@@ -57,10 +59,10 @@ local function refCheck(ref) ---@param ref tes3reference --Function to test lock
     --lockNode Check
     if ref.lockNode then
         if ref.lockNode.trap then
-            ----log:debug("%s is trapped : skipping", ref.object.name)
+            ----debug("%s is trapped : skipping", ref.object.name)
             return false
         elseif ref.lockNode.locked then
-            ----log:debug("%s is locked : skipping", ref.object.name)
+            ----debug("%s is locked : skipping", ref.object.name)
             return false
         end
         return true
@@ -71,25 +73,25 @@ local function refCheck(ref) ---@param ref tes3reference --Function to test lock
         if ref.mobile.isDead then
             return true
         end
-        --log:debug("%s is not dead : skipping", ref.object.name)
+        --debug("%s is not dead : skipping", ref.object.name)
         return false
     end
 
     --Script Check
     if ref.object.script ~= nil then --false if object has script
-        --log:debug("%s has script : skipping", ref.object.name)
+        --debug("%s has script : skipping", ref.object.name)
         return false
     end
 
     --Owner Check
     if tes3.getOwner({ reference = ref }) ~= nil then
-        --log:debug("%s owned : skipping", ref.object.name)
+        --debug("%s owned : skipping", ref.object.name)
         return false
     end
 
     --Inventory check
     if hasInventory[ref.object.objectType] and #ref.object.inventory > 0 then
-        --log:debug("%s has valid inventory", ref.object.name)
+        --debug("%s has valid inventory", ref.object.name)
         return true
     end
 end
@@ -97,9 +99,10 @@ end
 local function transfer(ref) ---@param ref tes3reference Just a little function to transfer/play effect if refCheck true
     if refCheck(ref) then
         tes3.createVisualEffect({ lifespan = 1, reference = ref, magicEffectId = transpose.id, })
-        --log:debug("playing effect on %s",ref.object.name)
+        --debug("playing effect on %s",ref.object.name)
         tes3.transferInventory({from = ref, to = tes3.mobilePlayer})
-        --log:debug("transfering from %s",ref.object.name)
+        tes3.playSound{sound = bs.bsSound.fantasyUI5}
+        --debug("transfering from %s",ref.object.name)
     end
 end
 
@@ -112,16 +115,18 @@ local function teleport(ref)---@param ref tes3reference Function to handle rando
         newPos.z = pos.z + math.random(0, rand/1.5) --dont want them going downwards, causes lots of iterations and maxing out
         local collision = tes3.testLineOfSight({ position1 = pos, position2 = newPos}) --Gets los, using to get pos not in a wall
         iter = iter + 1 --Just a counter
-        log:debug("iteration %s", iter)
+        -- debug("iteration %s", iter)
     until collision == true or iter >= 150 --Repeat until a random point has been generated thats in los of ref, to stop them tp into walls
 
-    ----log:debug("Ref pos %s, adjusted Pos %s", pos, newPos)
+    ----debug("Ref pos %s, adjusted Pos %s", pos, newPos)
 
     if iter < 150 then --Only teleport if a valid collision pos was found within 175 tries
+        tes3.playSound{sound = bs.bsSound.scifiBoom, reference = ref, volume = 2}
         tes3.positionCell({ reference = ref, position = newPos, cell = tes3.mobilePlayer.cell })
+
         -- tes3.positionCell({ reference = tes3.player, position = newPos, cell = tes3.mobilePlayer.cell })
     else
-        log:debug("no safe pos found")
+        debug("no safe pos found")
     end
 end
 
@@ -130,6 +135,7 @@ end
 ---@param e tes3magicEffectCollisionEventData
 local function onTranspose(e)
     if e.collision then
+        -- tes3.playSound{sound = bs.bsSound.fantasyUI5}
         local closest = nil --Variable for storing the nearest item if nothing was in range
 
         for ref in e.collision.colliderRef.cell:iterateReferences(iterateRefs) do --Set ref to every object in cell, that matches a type in iterateRefs table
@@ -166,13 +172,18 @@ local function onTranspose(e)
 end
 
 local function addEffects()
-    local bsTranspose = effectMaker.create({
+    local bsTranspose = bs.effect.create({
         id = transpose.id,
         name = "Transposistion",
         school = tes3.magicSchool["mysticism"],
 
         baseCost = 10,
-        speed = 3,
+        speed = 10,
+        hitSound = bs.bsSound.fantasyUI5,
+        -- castSound = bs.bsSound.magicImpact,
+        areaSound = bs.bsSound.fantasyUI6,
+        -- boltSound = bs.bsSound.magicImpact,
+        
 
         allowSpellmaking = true,
         hasNoMagnitude = true,

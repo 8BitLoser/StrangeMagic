@@ -10,15 +10,15 @@ local imports = info.imports() --How to import from common when requiring common
 local bs = require("BeefStranger.functions")
 
 local function initialized()
-
     print("[MWSE:StrangeMagic initialized]")
+    bs.sound.register()
 end
 event.register(tes3.event.initialized, initialized)
 
 local function registerSpells()
     bs.spell.create({
-        id = "bsTranspose",
-        name = "transposition Test",
+        id = info.transpose.name,
+        name = "Transposition",
         effect = info.transpose.id,
         alwaysSucceeds = true,
         min = 25,
@@ -61,6 +61,9 @@ local function registerSpells()
         id = info.suffocate.name,
         name = "Suffocate Test",
         effect = info.suffocate.id,
+        effect2 = tes3.effect.light,
+        min2 = 3,
+        duration2 = 3,
         min = 2,
         range = tes3.effectRange.target,
         alwaysSucceeds = true,
@@ -81,13 +84,13 @@ end
 event.register("loaded", registerSpells, {priority = 1})
 
 local function addSpells()
-   tes3.addSpell({ reference = tes3.mobilePlayer, spell = "bsTranspose" })
-   tes3.addSpell({ reference = tes3.mobilePlayer, spell = "bsRepair" })
-   tes3.addSpell({ reference = tes3.mobilePlayer, spell = "bsDisarm" })
-   tes3.addSpell({ reference = tes3.mobilePlayer, spell = "stumbleEffect" })
-   tes3.addSpell({ reference = tes3.mobilePlayer, spell = "suffocateEffect" })
+   tes3.addSpell({ reference = tes3.mobilePlayer, spell = info.transpose.name })
+   tes3.addSpell({ reference = tes3.mobilePlayer, spell = info.repair.name })
+   tes3.addSpell({ reference = tes3.mobilePlayer, spell = info.disarm.name })
+   tes3.addSpell({ reference = tes3.mobilePlayer, spell = info.stumble.name })
+   tes3.addSpell({ reference = tes3.mobilePlayer, spell = info.suffocate.name })
    tes3.addSpell({ reference = tes3.mobilePlayer, spell = info.learn.name })
-   tes3.mobilePlayer:equipMagic { source = info.learn.name }
+   tes3.mobilePlayer:equipMagic { source = info.transpose.name }
 end
 event.register(tes3.event.loaded, addSpells)
 
