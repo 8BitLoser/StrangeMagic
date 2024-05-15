@@ -1,3 +1,4 @@
+local bs = require("BeefStranger.functions")
 local common = {}
 
 function common.imports()
@@ -6,13 +7,11 @@ function common.imports()
     require("BeefStranger.StrangeMagic.effects.repairEffect"),
     require("BeefStranger.StrangeMagic.effects.stumbleEffect"),
     require("BeefStranger.StrangeMagic.effects.transposeEffect"),
-    require("BeefStranger.StrangeMagic.effects.suffocateEffect"),
     require("BeefStranger.StrangeMagic.effects.enchantLearn")
 end
 
-
-common.logger = require("logging.logger")
-common.log = common.logger.getLogger("StrangeMagic") or ""
+bs.createLog("StrangeMagic")
+common.log = bs.getLog("StrangeMagic")
 
 --- Just a shorthand for log.debug()
 --
@@ -20,47 +19,46 @@ common.log = common.logger.getLogger("StrangeMagic") or ""
 function common.debug(...)
     common.log:debug(...)
 end
-
-common.repair = {
-    name = "repairEffect",
-    id = 23331,
+common.magic = {
+    repair = {
+        name = "repairEffect",
+        id = 23331,
+        spellName = "Repair Equipment",
+        spellId = "repairSpell",
+    },
+    disarm = {
+        name = "disarmEffect",
+        id = 23332,
+        spellName = "Disarm",
+        spellId = "disarmSpell",
+        school = tes3.magicSchool.alteration
+    },
+    transpose = {
+        name = "transposeEffect",
+        id = 23333,
+        spellName = "Transposition",
+        spellId = "transposeSpell"
+    },
+    stumble = {
+        name = "stumbleEffect",
+        id = 23334,
+        spellName = "Stumble",
+        spellId = "stumbleSpell"
+    },
+    learn = {
+        name = "enchantLearn",
+        id = 23335,
+        spellName = "Deconstruct Enchant",
+        spellId = "learnSpell"
+    }
 }
 
-common.disarm = {
-    name = "disarmEffect",
-    id = 23332
-}
+local magic = common.magic
 
-common.transpose = {
-    name = "transposeEffect",
-    id = 23333
-}
-
-common.stumble = {
-    name = "stumbleEffect",
-    id = 23334,
-}
-
-common.suffocate = {
-    name = "suffocateEffect",
-    id = 23335
-}
-
-common.learn = {
-    name = "enchantLearn",
-    id = 23336
-}
-
-
-tes3.claimSpellEffectId(common.repair.name, common.repair.id)
-tes3.claimSpellEffectId(common.disarm.name, common.disarm.id)
-tes3.claimSpellEffectId(common.transpose.name, common.transpose.id)
-tes3.claimSpellEffectId(common.stumble.name, common.stumble.id)
-tes3.claimSpellEffectId(common.suffocate.name, common.suffocate.id)
-tes3.claimSpellEffectId(common.learn.name, common.learn.id)
-
-
+tes3.claimSpellEffectId(magic.repair.name, magic.repair.id)
+tes3.claimSpellEffectId(magic.disarm.name, magic.disarm.id)
+tes3.claimSpellEffectId(magic.transpose.name, magic.transpose.id)
+tes3.claimSpellEffectId(magic.stumble.name, magic.stumble.id)
+tes3.claimSpellEffectId(magic.learn.name, magic.learn.id)
 
 return common
-
---local log = require("BeefStranger.StrangeMagic.common").log

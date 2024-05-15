@@ -2,7 +2,7 @@ local bs = require("BeefStranger.functions")
 local info = require("BeefStranger.StrangeMagic.common")
 
 local debug = info.debug
-local stumble = info.stumble
+local stumble = info.magic.stumble
 
 ---@param e tes3magicEffectTickEventData
 local function stumbleTick(e)
@@ -38,10 +38,12 @@ local function addEffects()
     local stumbleEffect = bs.effect.create({
         id = stumble.id,
         name = "Stumble Effect",
-        school = tes3.magicSchool.illusion,
+        school = tes3.magicSchool["illusion"],
         hasNoMagnitude = true,
         hitSound = bs.sound.endboom1,
+        baseCost = 5,
 
+        allowSpellmaking = true,
         onTick = stumbleTick,
     })
 end

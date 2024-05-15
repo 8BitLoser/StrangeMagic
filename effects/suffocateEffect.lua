@@ -6,7 +6,7 @@ local bs = require("BeefStranger.functions")
 bs.debug(true)
 
 local log = info.log
-local suffocate = info.suffocate
+local suffocate = info.magic.suffocate
 
 ---@param e tes3magicEffectCollisionEventData
 local function onSuffocateCol(e)
@@ -14,12 +14,11 @@ local function onSuffocateCol(e)
     end
 end
 
-
 ---@param e tes3magicEffectTickEventData
 local function onSuffocateTick(e)
     local target = e.effectInstance.target
     local function suffocation()
-        bs.effectTimer(e, function ()
+        bs.effectTimer(e, function()
             target.mobile:applyDamage { damage = 1, playerAttack = true }
         end)
     end
@@ -33,6 +32,7 @@ local function addEffects()
         school = tes3.magicSchool["mysticism"],
         hasNoMagnitude = false,
         hitSound = bs.sound.WindBag,
+        baseCost = 5,
 
         onCollision = onSuffocateCol,
         onTick = onSuffocateTick,

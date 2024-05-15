@@ -2,14 +2,9 @@ local bs = require("BeefStranger.functions")
 local info = require("BeefStranger.StrangeMagic.common")
 local effectMaker = require("BeefStranger.effectMaker")
 
-local disarm = info.disarm
-
+local disarm = info.magic.disarm
 local debug = info.debug
 
-
--- local disarm.id = 23332
-
--- tes3.claimSpellEffectId("effectMakerDisarm", disarmID)
 
 
 local function vfx(target, isSuccess) --Function to handle vfx/sound, false = failed
@@ -61,8 +56,6 @@ local function onDisarmCollision(e)
     if e.collision then
         local target = e.collision.colliderRef
 
-        
-
         -- debug("%s", target.mobile.object.name)
 
         --Get disarm mag even if its in a custom spell
@@ -110,8 +103,8 @@ local function addEffects()
     local effectMakerDisarm = bs.effect.create({
         id = disarm.id,
         name = "Disarm Effect",
-        school = tes3.magicSchool["alteration"],
-        baseCost = 15,
+        school = disarm.school,
+        baseCost = 10,
 
         hasContinuousVFX = true,
 

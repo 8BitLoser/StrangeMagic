@@ -25,9 +25,11 @@ local function addEffects()
         name = "Repair Effect",
         school = tes3.magicSchool.alteration,
 
-        baseCost = 1,
+        baseCost = 75,
 
         allowSpellmaking = true,
+        canCastTarget = false,
+        cancastTouch = false,
 
         onTick = function (e)
             if e.effectInstance.state == tes3.spellState.working then e:trigger() return end

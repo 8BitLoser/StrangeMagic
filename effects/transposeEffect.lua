@@ -2,7 +2,7 @@ local bs = require("BeefStranger.functions")
 local info = require("BeefStranger.StrangeMagic.common")
 
 local debug = info.debug
-local transpose = info.transpose --Experimenting with centralized effect list
+local transpose = info.magic.transpose --Experimenting with centralized effect list
 
 -- tes3.claimSpellEffectId("bsTranspose", transpose.id)
 --Boolean Table of loose item objectTypes
@@ -130,21 +130,20 @@ local function teleport(ref)---@param ref tes3reference Function to handle rando
     end
 end
 
-
 --Transpose effect : Loot items from in radius of collision
 ---@param e tes3magicEffectCollisionEventData
 local function onTranspose(e)
     if e.collision then
         -- tes3.playSound{sound = bs.bsSound.fantasyUI5}
-        local closest = nil --Variable for storing the nearest item if nothing was in range
+        local closest = nil                                                           --Variable for storing the nearest item if nothing was in range
 
-        for ref in e.collision.colliderRef.cell:iterateReferences(iterateRefs) do --Set ref to every object in cell, that matches a type in iterateRefs table
-            local distance = (e.collision.point:distance(ref.position) / 22.1)    --The distance between the collision point and the position of the iterated ref
-            local range = math.max((bs.getEffect(e, transpose.id).radius + 1.5), 1.5)    --Range is either the effect radius + 1.5 or 1.5, whatever is bigger
-            local inRange = (distance <= range)                                   --Returns true if distance to ref is in range of the spell
+        for ref in e.collision.colliderRef.cell:iterateReferences(iterateRefs) do     --Set ref to every object in cell, that matches a type in iterateRefs table
+            local distance = (e.collision.point:distance(ref.position) / 22.1)        --The distance between the collision point and the position of the iterated ref
+            local range = math.max((bs.getEffect(e, transpose.id).radius + 1.5), 1.5) --Range is either the effect radius + 1.5 or 1.5, whatever is bigger
+            local inRange = (distance <= range)                                       --Returns true if distance to ref is in range of the spell
 
             --Note about range/radius, things can be hit in the visual radius but outside of the actual radius,
-            --not by much but it still happens. Most noticable at 0 radius, it will fail to impact items 
+            --not by much but it still happens. Most noticable at 0 radius, it will fail to impact items
             --like 95% of the time. Setting a min value of 1.5 seems to help, and adding 1.5 makes it
             --about equal with the visual radius of the effect. Otherwise things in the circle might not
             --actually be hit even though visually it was.
@@ -183,7 +182,7 @@ local function addEffects()
         -- castSound = bs.bsSound.magicImpact,
         areaSound = bs.bsSound.fantasyUI6,
         -- boltSound = bs.bsSound.magicImpact,
-        
+
 
         allowSpellmaking = true,
         hasNoMagnitude = true,
