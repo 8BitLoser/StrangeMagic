@@ -1,6 +1,5 @@
 local bs = require("BeefStranger.functions")
 local info = require("BeefStranger.StrangeMagic.common")
-local effectMaker = require("BeefStranger.effectMaker")
 
 local disarm = info.magic.disarm
 local debug = info.debug
@@ -13,19 +12,20 @@ local function vfx(target, isSuccess) --Function to handle vfx/sound, false = fa
 
     tes3.playSound({ sound = sound })      --Play disarm/fail sound
     tes3.playSound({ sound = "alteration hit", volume = 0.75 }) --Play hit sound at a lower volume
-    tes3.createVisualEffect({ lifespan = 1, reference = target, magicEffectId = disarm.id, })
+    bs.glowFX(target, disarm.id)
 end
 
 ---@param target tes3reference
 local function disarmEffect(target, disarmMag) --Shoved into a function to make it work for Touch spells too, hopefully it doesnt break anything
     if target.object.objectType == tes3.objectType.container or target.object.objectType == tes3.objectType.door then
+        local owner = target.itemData and target.itemData.owner
         local trap = target.lockNode.trap
         local disarmChance
 
         if trap and trap.effects then
            -- debug("trap - %s", trap.name)
             local totalTrapMag = 0
-            for i, effect in ipairs(trap.effects) do                --For every effect in the trap spell, set effect to it. (not sure any vanilla one has more than 1 effect, but check anyway)
+            for i, effect in ipairs(trap.effects) do                --For every effect in the trap spell, set effect to it. (not sure any vanilla one has more than 1 effect, but checking anyway)
                 if effect and effect.max > 0 then                   --If an effect is found and that effect has a magnitude higher than 0
                     local effectiveMag = bs.effect.getMag(effect) --Set effectiveMag to the calculated eMag (the getMag function becuase the built in way doesnt work without e:triggers and theres no trigger on collisions)
                     local trapDuration = effect.duration            --Grab the effects duration to add to calc
@@ -38,8 +38,12 @@ local function disarmEffect(target, disarmMag) --Shoved into a function to make 
            debug("disarmMag = %s, disarmChance: %s", disarmMag, disarmChance)
             if disarmMag >= disarmChance then
                 tes3.setTrap({ reference = target, spell = nil })
-                tes3.game:clearTarget()                        --Update tooltip
+                
+                if tes3.hasOwnershipAccess{reference = tes3.player, target = target} == false then
+                    tes3.triggerCrime{type = tes3.crimeType.trespass, victim = owner}
+                end
 
+                tes3.game:clearTarget()                        --Update tooltip
                 vfx(target, true) --vfx function
             else
                 vfx(target, false)
@@ -74,7 +78,6 @@ local function onDisarmCollision(e)
             end}
         end
         disarmEffect(target, complexMag)
-
     end
 end
 
