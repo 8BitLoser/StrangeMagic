@@ -121,7 +121,7 @@ local function addEffects()
     bs.effect.create({
         id = learn.id,
         name = "Deconstruct Enchantment",
-        school = tes3.magicSchool["mysticism"],
+        school = learn.school,
         description = "Learn how to cast the Enchantment as a spell, at the cost of the enchanted item.",
 
         baseCost = 10,
@@ -164,23 +164,3 @@ local function charGenFinishedCallback(e)
     end
 end
 event.register(tes3.event.charGenFinished, charGenFinishedCallback)
-
-
-local function onKeyDownI()
-    if not tes3.menuMode() then
-        -- tes3.mobilePlayer:exerciseSkill(tes3.skill.enchant, 100)
-        -- log("%s", inspect(tes3.mobilePlayer.object.class.majorSkills))
-        -- local major = tes3.mobilePlayer.object.class.majorSkills
-        -- -- inspect(tes3.mobilePlayer.object.class.majorSkills)
-
-        -- for _, skill in ipairs(tes3.mobilePlayer.object.class.minorSkills) do
-        --     if skill == tes3.skill.enchant then
-        --         log("enchant is minor skill")
-        --     else
-        --         log("enchant is not minor skill")
-            -- end
-        -- end
-
-    end
-end
-event.register("keyDown", onKeyDownI, { filter = tes3.scanCode["i"] })

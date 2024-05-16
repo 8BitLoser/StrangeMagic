@@ -38,7 +38,7 @@ local function addEffects()
     local stumbleEffect = bs.effect.create({
         id = stumble.id,
         name = "Stumble Effect",
-        school = tes3.magicSchool["illusion"],
+        school = stumble.school,
         hasNoMagnitude = true,
         hitSound = bs.sound.endboom1,
         baseCost = 5,
