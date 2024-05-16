@@ -62,11 +62,26 @@ local function registerSpells()
         cost = bs.lerp(100, 5, 90, tes3.mobilePlayer.enchant.current, false),
         duration = 0
     }
+
+    bs.spell.create{
+        id = magic.steal.spellId,
+        name = magic.steal.spellName,
+        effect = magic.steal.id,
+        range = tes3.effectRange.target,
+        alwaysSucceeds = true,
+        cost = 0,
+        duration = 1,
+    }
 end
 event.register("loaded", registerSpells, { priority = 1 })
 
 local function addSpells()
     common.distributeSpells()
+
+    ---------Debug----------
+    bs.addSpell(tes3.player, magic.steal.spellId)
+    -- tes3.mobilePlayer:equipMagic{source = magic.steal.spellId}
+    bs.equipMagic(magic.steal.spellId)
 end
 event.register(tes3.event.loaded, addSpells)
 
@@ -74,12 +89,14 @@ event.register(tes3.event.loaded, addSpells)
 bs.keyUp("p", function()
    local target = bs.rayCast(900)
    if not target then return end
-   debug("has access %s", tes3.hasOwnershipAccess{reference = tes3.player, target = target})
-   debug("%s owns this", target.itemData.owner)
+   debug("`npc` NPC = %s", bs.typeCheck(target, "npc", true))
+   debug("tes3.objectType.npc NPC = %s", bs.typeCheck(target, tes3.objectType.npc))
 end)
 
 bs.keyUp("i", function ()
+    local target = bs.rayCast(900) 
     tes3.messageBox("I Pressed")
+    debug("[1] - %s", target.object.inventory)
     tes3.mobilePlayer:exerciseSkill(tes3.skill.enchant, 100)
     bs.bulkAddSpells(tes3.player, magic) ---Add all spells to player
 end)

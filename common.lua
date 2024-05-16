@@ -7,7 +7,8 @@ function common.imports()
     require("BeefStranger.StrangeMagic.effects.repairEffect"),
     require("BeefStranger.StrangeMagic.effects.stumbleEffect"),
     require("BeefStranger.StrangeMagic.effects.transposeEffect"),
-    require("BeefStranger.StrangeMagic.effects.enchantLearn")
+    require("BeefStranger.StrangeMagic.effects.enchantLearn"),
+    require("BeefStranger.StrangeMagic.effects.steal")
 end
 
 
@@ -19,9 +20,9 @@ local log = common.log
 --- Just a shorthand for log.debug()
 --
 ---     local debug = common.debug
-function common.debug(...)
-    common.log:debug(...)
-end
+-- function common.debug(...)
+--     common.log:debug(...)
+-- end
 ---@enum magic 
 common.magic = {
     repair = {
@@ -63,6 +64,15 @@ common.magic = {
         spellId = "learnSpell",
         seller = "galbedir",
         school = tes3.magicSchool["mysticism"]
+    },
+    steal = {
+        name = "stealEffect",
+        id = 23336,
+        spellName = "Steal",
+        spellId = "stealSpell",
+        seller = "fargoth",
+        school = tes3.magicSchool["illusion"]
+
     }
 }
 

@@ -78,7 +78,6 @@ local function addEffects()
                             -- log:debug("stack = %s, c - %s, mC - %s", armor.object.name, condition, maxCondition)
                             --------------------------------------------------------------------------------
                             bs.effectTimer(e, function()
-                                -- log:debug("i - %s", i)
                                 armor.itemData.condition = math.min(armor.itemData.condition + 1, armor.object.maxCondition)
                                 log:debug("armor - %s, c - %s, mC = %s", armor.object.name, armor.itemData.condition, armor.object.maxCondition)
                             end)
