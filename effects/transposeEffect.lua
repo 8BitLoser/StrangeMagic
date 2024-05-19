@@ -1,8 +1,9 @@
 local bs = require("BeefStranger.functions")
 local info = require("BeefStranger.StrangeMagic.common")
 
-local debug = info.debug
+local debug = info.log.debug
 local transpose = info.magic.transpose --Experimenting with centralized effect list
+local inspect = require("inspect").inspect
 
 -- tes3.claimSpellEffectId("bsTranspose", transpose.id)
 --Boolean Table of loose item objectTypes
@@ -37,32 +38,16 @@ local being = {
     [tes3.objectType.creature] = true,
     [tes3.objectType.npc] = true,
 }
+
 ----Need more experience with functions, so using a ton. Does make code look a bit nicer
-
-local function addItem(ref) ---@param ref tes3reference Add item to player then delete it
-    if itemTypes[ref.object.objectType] and (ref.deleted == false) then --If the item is in the list and not marked deleted
-        if ref.object.name == "Gold" then                               --Gold piles dont work right, so i have to do this
-            tes3.addItem({ reference = tes3.mobilePlayer, item = ref.object, count = ref.object.value })
-            tes3.playSound{sound = bs.bsSound.fantasyUI5}
-            ----debug("Looting Gold - %s", ref.object.value)
-            ref:delete()
-        else --Add the item to the player, then delete the item
-            tes3.addItem({ reference = tes3.mobilePlayer, item = ref.object, count = ref.stackSize })
-            tes3.playSound{sound = bs.bsSound.fantasyUI5}
-            ----debug("Looting item - %s - %s", ref.object.name, ref.stackSize)
-            ref:delete()
-        end
-    end
-end
-
 local function refCheck(ref) ---@param ref tes3reference --Function to test lockNode, Locked, Trapped, NPC, isDead, Owner, Inventory
     --lockNode Check
     if ref.lockNode then
         if ref.lockNode.trap then
-            ----debug("%s is trapped : skipping", ref.object.name)
+            debug("%s is trapped : skipping", ref.object.name)
             return false
         elseif ref.lockNode.locked then
-            ----debug("%s is locked : skipping", ref.object.name)
+            debug("%s is locked : skipping", ref.object.name)
             return false
         end
         return true
@@ -73,36 +58,83 @@ local function refCheck(ref) ---@param ref tes3reference --Function to test lock
         if ref.mobile.isDead then
             return true
         end
-        --debug("%s is not dead : skipping", ref.object.name)
+        debug("%s is not dead : skipping", ref.object.name)
         return false
     end
 
     --Script Check
     if ref.object.script ~= nil then --false if object has script
-        --debug("%s has script : skipping", ref.object.name)
+        debug("%s has script : skipping", ref.object.name)
         return false
     end
+
 
     --Owner Check
-    if tes3.getOwner({ reference = ref }) ~= nil then
-        --debug("%s owned : skipping", ref.object.name)
+    if tes3.getOwner({ reference = ref }) ~= nil and not tes3.hasOwnershipAccess({ target = ref }) then
+        debug("%s owned : skipping", ref.object.name)
         return false
     end
-
     --Inventory check
     if hasInventory[ref.object.objectType] and #ref.object.inventory > 0 then
-        --debug("%s has valid inventory", ref.object.name)
+        if tes3.hasOwnershipAccess({ target = ref }) then
+            debug("Has Access to %s", ref.object.name)
+            return true
+        end
+        debug("%s has valid inventory", ref.object.name)
         return true
     end
+
+    -- return true
 end
+--Table of items looted, for the notification
+local looted = {}
+
+local function addItem(ref) ---@param ref tes3reference Add item to player then delete it
+    if itemTypes[ref.object.objectType] and (ref.deleted == false) then --If the item is in the list and not marked deleted
+        if tes3.getOwner({ reference = ref }) ~= nil and not tes3.hasOwnershipAccess({ target = ref }) then
+            debug("%s is owned/you dont have access", ref.object.name)
+            return
+        end
+
+        if looted[ref.object.name] then --Checks if the item is already in the table
+            looted[ref.object.name] = looted[ref.object.name] + ref.stackSize --Increase stack size by second item stack size
+        else
+            looted[ref.object.name] = ref.stackSize
+        end
+
+
+        -- local itemDetails = ref.object.name .. " - " .. tostring(ref.stackSize)
+
+        if ref.object.name == "Gold" then                               --Gold piles dont work right, so i have to do this
+            tes3.addItem({ reference = tes3.mobilePlayer, item = ref.object, count = ref.object.value })
+            tes3.playSound{sound = bs.bsSound.fantasyUI5}
+            debug("Looting Gold - %s", ref.object.value)
+            -- info.createLootNotification("Gold - " .. tostring(ref.object.value))
+            ref:delete()
+        else --Add the item to the player, then delete the item
+            -- table.insert(looted, ref.object.name, ref.stackSize)
+            -- looted[ref.object.name] = ref.stackSize
+            tes3.addItem({ reference = tes3.mobilePlayer, item = ref.object, count = ref.stackSize })
+            tes3.playSound{sound = bs.bsSound.fantasyUI5}
+            debug("Looting item - %s - %s", ref.object.name, ref.stackSize)
+
+            ref:delete()
+            -- return looted
+        end
+    end
+    return looted
+end
+
+
 
 local function transfer(ref) ---@param ref tes3reference Just a little function to transfer/play effect if refCheck true
     if refCheck(ref) then
+        debug("REFCHECK - %s", refCheck(ref))
         tes3.createVisualEffect({ lifespan = 1, reference = ref, magicEffectId = transpose.id, })
-        --debug("playing effect on %s",ref.object.name)
+        debug("playing effect on %s",ref.object.name)
         tes3.transferInventory({from = ref, to = tes3.mobilePlayer})
         tes3.playSound{sound = bs.bsSound.fantasyUI5}
-        --debug("transfering from %s",ref.object.name)
+        debug("transfering from %s",ref.object.name)
     end
 end
 
@@ -134,10 +166,16 @@ end
 ---@param e tes3magicEffectCollisionEventData
 local function onTranspose(e)
     if e.collision then
+        debug("collision - %s", e.collision)
+        debug("colliderRef - %s", e.collision.colliderRef)
+        -- debug("collision - %s", e.collision.normal)
         -- tes3.playSound{sound = bs.bsSound.fantasyUI5}
         local closest = nil                                                           --Variable for storing the nearest item if nothing was in range
+        local colRef, colPoint = e.collision.colliderRef, e.collision.point
+        local collisionCell = colRef and colRef.cell or tes3.getCell { position = colPoint }
+        debug("collisionCell = %s", collisionCell)
 
-        for ref in e.collision.colliderRef.cell:iterateReferences(iterateRefs) do     --Set ref to every object in cell, that matches a type in iterateRefs table
+        for ref in collisionCell:iterateReferences(iterateRefs) do     --Set ref to every object in cell, that matches a type in iterateRefs table
             local distance = (e.collision.point:distance(ref.position) / 22.1)        --The distance between the collision point and the position of the iterated ref
             local range = math.max((bs.getEffect(e, transpose.id).radius + 1.5), 1.5) --Range is either the effect radius + 1.5 or 1.5, whatever is bigger
             local inRange = (distance <= range)                                       --Returns true if distance to ref is in range of the spell
@@ -149,9 +187,10 @@ local function onTranspose(e)
             --actually be hit even though visually it was.
 
             if inRange then
-                tes3.messageBox("inRange")
+                -- bs.msg("inRange")
                 transfer(ref)
                 addItem(ref)
+                -- looted[ref.object.name] = ref.stackSize
                 if being[ref.object.objectType] and ref.mobile.isDead == false then
                     teleport(ref)
                 end
@@ -166,6 +205,14 @@ local function onTranspose(e)
                     end
                 end
             end
+        end
+
+        if next(looted) then
+            debug("%s", inspect(looted))
+            info.createLootNotification(looted)
+            looted = {}
+        else
+            debug("Nothing looted")
         end
     end
 end
