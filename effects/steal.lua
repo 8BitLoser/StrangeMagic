@@ -5,6 +5,16 @@ local log = info.log
 local debug = log.debug
 local steal = info.magic.steal --Experimenting with centralized effect list
 local inspect = require("inspect").inspect
+local config, luckImpact, valueImpact = require("BeefStranger.StrangeMagic.config") ---get config and setup placeholder a, b
+
+local function stealCalc(luck, value) ---CHECK TARGET LUCK TOO MAYBE
+    luckImpact = config.luckImpact or 0.035 ---Luck impact
+    valueImpact = config.valueImpact  or 0.40 ---Impact of value
+    local exponent = -(luckImpact * (luck - valueImpact * value))
+    local chance = 1 / (1 + math.exp(exponent))
+debug("luckImpact = %s, valueImpact = %s", luckImpact, valueImpact)
+    return chance
+end
 
 ---@param e tes3magicEffectTickEventData
 local function stealTick(e)
@@ -14,24 +24,39 @@ local function stealTick(e)
         local shuffledInv = bs.shuffleInv(target.object.inventory)
         if bs.typeCheck(target, "npc") then
             for i, stack in pairs(shuffledInv) do
-                local item = stack.object
+                local item = stack.object 
                 local name, value = item.name, item.value
-                local rand = math.random(100)
-                local stealChance = (playerLuck / (value )) * 10
+                local rand = math.random(100) -- used for clothes and crime on fail checks
 
-                -- debug("%s - %sG", name, value)
-                if  stealChance > rand then
-                    tes3.messageBox("%s stolen from %s", name, target.object.name)
-                    debug("%s - %s Stolen %sG, chance = %d/%s",i, name, value, stealChance, rand)
-                    ---Add crime trigger
+                local roll = math.random() + 0.05
+                local chance = math.max(0.05 ,stealCalc(playerLuck, value))
+debug("clothing = %s", bs.typeCheck(item, tes3.objectType.clothing, true))
+
+debug("luck = %d, value = %d, exponent = %.2f, chance = %.2f, roll = %.2f", playerLuck, value, -(luckImpact * (playerLuck - valueImpact * value)), chance, roll)
+
+                if roll < chance then --dont take clothes pervert
+
+                    if bs.typeCheck(item, "clothing") and rand > 10 then
+debug("Clothes chance fail")
+                        bs.msg("DEBUG: Clothes chance fail")
+                        break
+                    end
+
+                    bs.msg("%s stolen from %s", name, target.object.name)
+debug("%s - %s Stolen %sG, chance = %.2f / roll = %.2f",i, name, value, chance, roll)
                     tes3.transferItem{from = target, to = tes3.mobilePlayer, item = item}
-                    break
-                elseif i >= 5 then
-                    tes3.messageBox("Failed to steal anything")
-                    ---maybe crime trigger here aswell
+                    tes3.triggerCrime{type = tes3.crimeType["pickpocket"], victim = target.object}
                     break
                 else
-                    debug("%s Failed to steal %d/%d", i, stealChance, rand)
+                    bs.msg("Failed to steal anything")
+debug("%s Failed to steal %sG %d/%d", i, value, chance, roll)
+
+                    if rand < 10 then
+                        tes3.triggerCrime{type = tes3.crimeType["pickpocket"], victim = target.object}
+                        bs.msg("%s noticed your attempt!", target.object.name)
+                    end
+
+                    break
                 end
             end
         end
@@ -39,23 +64,20 @@ local function stealTick(e)
     bs.onTick(e, stealAction)
 end
 
-local function addEffects()
-    local bsSteal = bs.effect.create({
+event.register("magicEffectsResolved", function()
+    bs.effect.create({
         id = steal.id,
         name = steal.name,
         school = steal.school,
+        description = "Test your Luck.",
 
         baseCost = 10,
-        speed = 10,
+        speed = 1,
 
-        -- hasContinuousVFX = false,
-        allowSpellmaking = true,
         hasNoMagnitude = true,
         hasNoDuration = true,
         canCastSelf = false,
 
         onTick = stealTick
-        -- onCollision = onTranspose
     })
-end
-event.register("magicEffectsResolved", addEffects)
+end)

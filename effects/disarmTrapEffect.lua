@@ -7,7 +7,6 @@ local debug = info.debug
 
 
 local function vfx(target, isSuccess) --Function to handle vfx/sound, false = failed
-    --Still not clicking, but this is a boolean check, if isSuccess == true the sound it "Disarm Trap" else its "...Fail"
     local sound = isSuccess and "Disarm Trap" or "Disarm Trap Fail"
 
     tes3.playSound({ sound = sound })      --Play disarm/fail sound

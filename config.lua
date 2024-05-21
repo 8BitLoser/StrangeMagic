@@ -10,6 +10,9 @@ local defaults = {
     enabled = true,
     addEnchant = false,
     logLevel = "NONE",
+    luckImpact = 0.05,
+    valueImpact = 0.005,
+    combatOnly = false,
 
 }
 
@@ -36,6 +39,31 @@ local function registerModConfig()
             bs.bulkAddSpells(tes3.player, magic)
         end,
         inGameOnly = true
+    })
+
+    settings:createYesNoButton{
+        label = "Transpose NPC's in combat only",
+        variable = mwse.mcm.createTableVariable{id = "combatOnly", table = config}
+    }
+
+    settings:createSlider({
+        variable = mwse.mcm.createTableVariable{id = "luckImpact", table = config},
+        label = "Impact of Luck in chance to steal. Higher = easier to steal valuables.",
+        min = 0.001,
+        decimalPlaces = 3,
+        max = 1.00,
+        step = 0.001,
+        jump = 0.010,
+    })
+
+    settings:createSlider({
+        variable = mwse.mcm.createTableVariable{id = "valueImpact", table = config},
+        label = "Impact of Value in chance to steal. Higher = harder to steal valuables.",
+        min = 0.001,
+        decimalPlaces = 3,
+        max = 1.000,
+        step = 0.001,
+        jump = 0.010,
     })
 
     -- settings:createYesNoButton{

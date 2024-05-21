@@ -86,59 +86,25 @@ local function getEnchanted()
     return enchantedItems
 end
 
----Make the buttons for the messageMenu
---[[ local function enchantButtons()
-    local enchantedItems = getEnchanted()
-    local buttons = {}
-    for _, stack in ipairs(enchantedItems) do
-        local effect = stack.enchant
-        table.insert(buttons, {
-
-            text = string.format("%s - %s", stack.name, effect.object.name),
-            callback = function()
-                tes3.removeItem { reference = tes3.mobilePlayer, item = stack.id }
-                tes3.addSpell({ reference = tes3.mobilePlayer, spell = generateSpell(stack) })
-                tes3.playSound { sound = bs.sound.enchant_success, volume = .7 }
-                tes3.playSound { sound = bs.bsSound.bashImpact, volume = 1, pitch = 1.5 }
-            end
-        })
+---Player data initialization
+local bsEnchant
+event.register("loaded", function()
+    -- Ensure tes3.player.data is initialized
+    if not tes3.player.data then
+        tes3.player.data = {}
     end
-    return buttons
-end ]]
 
+    -- Initialize bsEnchant if it doesn't exist
+    tes3.player.data.bsEnchant = tes3.player.data.bsEnchant or {}
+    bsEnchant = tes3.player.data.bsEnchant
 
-local function knownEffect(item)
-    -- local enchantTable = getEnchanted()
-    local spells = tes3.getSpells{target = tes3.player}
-    local known = 0
-
-    -- for _, item in ipairs(enchantTable) do
-        for _, effect in ipairs(item.effect) do
-            for _, spell in ipairs(spells) do
-                local hasEffect = spell:getFirstIndexOfEffect(effect.id)
-                -- debug("%s", hasEffect)
-                if hasEffect >= 0 then
-                    known = 1
-                    break
-                end
-            end
-        end
-    -- end
-    if known == 1 then
-        return "[Known] "
-    else
-        return ""
-    end
-    -- return known
-end
-
-
+    -- Initialize bsEnchant.know if it doesn't exist
+    bsEnchant.know = bsEnchant.know or {}
+    debug("%s", inspect(bsEnchant))
+end)
 
 local function enchantMenu() --Learning UI, its not going well
     ---Also learning tables a bit more
-    tes3.player.data.bsEnchant = tes3.player.data.bsEnchant or {} --Load bsEnchant table or if it doesnt exist create it
-    local bsEnchant = tes3.player.data.bsEnchant --Handle for the table
-    bsEnchant.know = bsEnchant.know or {} --Need to initialize tables like this, it gets the current table if it exists, and if it doesnt it creates an empty table
 
     local enchantTable = getEnchanted()
     local enchantMenuID = tes3ui.registerID("bsEnchantMenu") --Register the bsEnchantMenu id
@@ -171,17 +137,14 @@ local function enchantMenu() --Learning UI, its not going well
     header.font = 2
     header:createDivider({})
 
-    -- local label = enMenu:createLabel{ text = "Enchanted Items "} --Makes the label to show at the top
-    -- label.borderTop = 10    --Adds top and bottom space around the label to seperate it
-    -- label.borderBottom = 10
-
     local destroy = function () enMenu:destroy() tes3ui.leaveMenuMode() end --A function to destroy and leaveMenuMode, otherwise it wouldnt close
 
     for _, item in ipairs(enchantTable) do --set 'item' to each item in the enchantTable table 
-        local enchantID = item.enchant.object.id --ID of the items first enchantment
+        local enchantID = tostring(item.enchant.object.id) --ID of the items first enchantment|Had to do tostring, because sometimes it would randomly be a string and somethimes it was randomly a number
         local deconCount = bsEnchant[enchantID] or 0 --deconCount = value saved in bsEnchant or 0 if it doesnt exist
         local known = bsEnchant.know[enchantID] == true --Conditional check, if .know is false or nil know = false, if its true, know = true
 
+        debug("in loop %s", inspect(bsEnchant))
         -- debug("before - %s", tostring(known)) 
 
         if deconCount < 5 then --Can use the spell 5 times to gain xp after enchant has been learned, means you have 6 total decons, but only 5 give xp
@@ -190,7 +153,7 @@ local function enchantMenu() --Learning UI, its not going well
             -- local enItems = enMenu:createButton { text =  (known and "[Known] " or "").. item.name .. " - " .. item.enchant.object.name  }
 
             --Tooltip Creation
-            enItems:register("help", function(e) --"help" is where you create a tooltip
+            enItems:register("help", function(e) --"help" is where you create a tooltip, and other non pause ui
                 local tooltip = tes3ui.createTooltipMenu { item = item.id } --Actual tooltip creation on the item
                 tooltip:createLabel { text = "Description: blahblahblah" } -- Add more detailed info
 
@@ -208,8 +171,8 @@ local function enchantMenu() --Learning UI, its not going well
                     tes3.mobilePlayer:exerciseSkill(tes3.skill.enchant, math.clamp(item.totalCost, 5, 75)) --give a clamped amount of xp
                 end
 
-                tes3.removeItem { reference = tes3.mobilePlayer, item = item.id }
-                tes3.addSpell({ reference = tes3.mobilePlayer, spell = generateSpell(item) })
+                tes3.removeItem { reference = tes3.mobilePlayer, item = item.id } --Destroy item
+                tes3.addSpell({ reference = tes3.mobilePlayer, spell = generateSpell(item) }) --Generate Spell from enchant
                 tes3.playSound { sound = bs.sound.enchant_success, volume = .7 }
                 tes3.playSound { sound = bs.bsSound.breakWood, volume = 1, pitch = 1.5 }
 
@@ -229,52 +192,18 @@ local function enchantMenu() --Learning UI, its not going well
     enMenu:updateLayout()
 end
 
+bs.keyUp("u", function ()
+    tes3.showSpellmakingMenu{serviceActor = tes3.player}
+end)
+
 bs.keyUp(";", enchantMenu)
-
-
---[[ local function processEnchantedItems(callback)
-    local enchantedItems = getEnchanted()
-    for _, stack in ipairs(enchantedItems) do
-        callback(stack)
-    end
-end
-
-local function enchantButtons()
-    local buttons = {}
-    processEnchantedItems(function(stack)
-        local effect = stack.enchant
-        table.insert(buttons, {
-            text = string.format("%s - %s", stack.name, effect.object.name),
-            callback = function()
-                tes3.removeItem { reference = tes3.mobilePlayer, item = stack.id }
-                tes3.addSpell({ reference = tes3.mobilePlayer, spell = generateSpell(stack) })
-                tes3.playSound { sound = bs.sound.enchant_success, volume = .7 }
-                tes3.playSound { sound = bs.bsSound.bashImpact, volume = 1, pitch = 1.5 }
-            end
-        })
-    end)
-    return buttons
-end
- ]]
 
 ---@param e tes3magicEffectTickEventData
 local function onLearnTick(e)
-
-
-
-    -- local messageMenu = tes3ui.findMenu(tes3ui.registerID("MenuMessage")) ---Codium says this is a more efficient way of handling menus, not sure i see the point, but figured i'd try it out
-    -- if messageMenu then
-    --     local buttons = enchantButtons()
-    --     messageMenu:destroyChildren()
-    --     messageMenu:destroy()
-    --     tes3ui.showMessageMenu { message = "Enchanted Items", buttons = buttons, cancels = true }
-    -- else
-        bs.onTick(e, function()
-            enchantMenu()
-            -- tes3ui.showMessageMenu { message = "Enchanted Items", buttons = buttons, cancels = true }
-        end)
-    end
--- end
+    bs.onTick(e, function()
+        enchantMenu()
+    end)
+end
 
 local function addEffects()
     bs.effect.create({
@@ -323,53 +252,3 @@ local function charGenFinishedCallback(e)
     end
 end
 event.register(tes3.event.charGenFinished, charGenFinishedCallback)
-
-
--- bs.keyUp("n", function ()
---     local enchantTable = getEnchanted()
---     local spells = tes3.getSpells{target = tes3.player}
-
---     for _, spell in ipairs(spells) do
-        
---         for _, item in ipairs(enchantTable) do
---             local hasEffect = spell:getFirstIndexOfEffect(item.effect.id)
---             debug("%s", hasEffect)
---             -- knownCheck(item)
---         end
---     end
-
-
---     -- debug("%s",inspect(enchantTable))
-
---     -- enchantMenu(--[[ enchantTable ]])
--- end)
-
-
-
-
-
-
--- bs.keyUp("n", function ()
---     local enchantTable = getEnchanted()
---     local spells = tes3.getSpells{target = tes3.player}
-
---     for _, item in ipairs(enchantTable) do ---sigh| loop through every item in enchantTable
---         local effectKnown = false   ---initialize 
---         for _, effect in ipairs(item.effect) do --loop through all effects in enchantTable.effects
---             for _, spell in ipairs(spells) do --Loop through all spells on player
---                 local hasEffect = spell:getFirstIndexOfEffect(effect.id) ---set hasEffect to the result of the check
---                 if hasEffect >= 0 then
---                     effectKnown = true
---                     debug("Effect %s from item %s is already known", effect.object.name, item.name)
---                     break
---                 end
---             end
---             if effectKnown then
---                 break
---             end
---         end
---         if not effectKnown then
---             debug("No matching effect found for item %s", item.name)
---         end
---     end
--- end)

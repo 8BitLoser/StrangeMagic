@@ -1,5 +1,6 @@
 local bs = require("BeefStranger.functions")
 local info = require("BeefStranger.StrangeMagic.common")
+local config = require("BeefStranger.StrangeMagic.config")
 
 local debug = info.log.debug
 local transpose = info.magic.transpose --Experimenting with centralized effect list
@@ -40,11 +41,13 @@ local being = {
 }
 
 ----Need more experience with functions, so using a ton. Does make code look a bit nicer
+
 local function refCheck(ref) ---@param ref tes3reference --Function to test lockNode, Locked, Trapped, NPC, isDead, Owner, Inventory
     --lockNode Check
     if ref.lockNode then
         if ref.lockNode.trap then
             debug("%s is trapped : skipping", ref.object.name)
+            tes3.createVisualEffect({ lifespan = 2, reference = ref, magicEffectId = tes3.effect["fireDamage"], })
             return false
         elseif ref.lockNode.locked then
             debug("%s is locked : skipping", ref.object.name)
@@ -59,19 +62,21 @@ local function refCheck(ref) ---@param ref tes3reference --Function to test lock
             return true
         end
         debug("%s is not dead : skipping", ref.object.name)
+        tes3.createVisualEffect({ lifespan = 2, reference = ref, magicEffectId = tes3.effect["fireDamage"], })
         return false
     end
 
     --Script Check
     if ref.object.script ~= nil then --false if object has script
         debug("%s has script : skipping", ref.object.name)
+        tes3.createVisualEffect({ lifespan = 2, reference = ref, magicEffectId = tes3.effect["damageAttribute"], })
         return false
     end
 
 
     --Owner Check
     if tes3.getOwner({ reference = ref }) ~= nil and not tes3.hasOwnershipAccess({ target = ref }) then
-        debug("%s owned : skipping", ref.object.name)
+        tes3.createVisualEffect({ lifespan = 2, reference = ref, magicEffectId = tes3.effect["drainSkill"], })
         return false
     end
     --Inventory check
@@ -90,8 +95,9 @@ end
 local looted = {}
 
 local function addItem(ref) ---@param ref tes3reference Add item to player then delete it
-    if itemTypes[ref.object.objectType] and (ref.deleted == false) then --If the item is in the list and not marked deleted
+    if itemTypes[ref.object.objectType] and (ref.deleted == false) and not ref.object.script then --If the item is in the list and not marked deleted
         if tes3.getOwner({ reference = ref }) ~= nil and not tes3.hasOwnershipAccess({ target = ref }) then
+            tes3.createVisualEffect({ lifespan = 2, reference = ref, magicEffectId = tes3.effect["fireDamage"], })
             debug("%s is owned/you dont have access", ref.object.name)
             return
         end
@@ -125,12 +131,10 @@ local function addItem(ref) ---@param ref tes3reference Add item to player then 
     return looted
 end
 
-
-
 local function transfer(ref) ---@param ref tes3reference Just a little function to transfer/play effect if refCheck true
     if refCheck(ref) then
         debug("REFCHECK - %s", refCheck(ref))
-        tes3.createVisualEffect({ lifespan = 1, reference = ref, magicEffectId = transpose.id, })
+        tes3.createVisualEffect({ lifespan = 2, reference = ref, magicEffectId = transpose.id, })
         debug("playing effect on %s",ref.object.name)
         tes3.transferInventory({from = ref, to = tes3.mobilePlayer})
         tes3.playSound{sound = bs.bsSound.fantasyUI5}
@@ -148,7 +152,7 @@ local function teleport(ref)---@param ref tes3reference Function to handle rando
         local collision = tes3.testLineOfSight({ position1 = pos, position2 = newPos}) --Gets los, using to get pos not in a wall
         iter = iter + 1 --Just a counter
         -- debug("iteration %s", iter)
-    until collision == true or iter >= 150 --Repeat until a random point has been generated thats in los of ref, to stop them tp into walls
+    until collision == true or iter >= 100 --Repeat until a random point has been generated thats in los of ref, to stop them tp into walls
 
     ----debug("Ref pos %s, adjusted Pos %s", pos, newPos)
 
@@ -165,33 +169,34 @@ end
 --Transpose effect : Loot items from in radius of collision
 ---@param e tes3magicEffectCollisionEventData
 local function onTranspose(e)
+    local config = require("BeefStranger.StrangeMagic.config")
     if e.collision then
-        debug("collision - %s", e.collision)
-        debug("colliderRef - %s", e.collision.colliderRef)
+        -- debug("collision - %s", e.collision)
+        -- debug("colliderRef - %s", e.collision.colliderRef)
         -- debug("collision - %s", e.collision.normal)
         -- tes3.playSound{sound = bs.bsSound.fantasyUI5}
         local closest = nil                                                           --Variable for storing the nearest item if nothing was in range
         local colRef, colPoint = e.collision.colliderRef, e.collision.point
         local collisionCell = colRef and colRef.cell or tes3.getCell { position = colPoint }
-        debug("collisionCell = %s", collisionCell)
+        -- debug("collisionCell = %s", collisionCell)
 
         for ref in collisionCell:iterateReferences(iterateRefs) do     --Set ref to every object in cell, that matches a type in iterateRefs table
             local distance = (e.collision.point:distance(ref.position) / 22.1)        --The distance between the collision point and the position of the iterated ref
             local range = math.max((bs.getEffect(e, transpose.id).radius + 1.5), 1.5) --Range is either the effect radius + 1.5 or 1.5, whatever is bigger
             local inRange = (distance <= range)                                       --Returns true if distance to ref is in range of the spell
 
-            --Note about range/radius, things can be hit in the visual radius but outside of the actual radius,
-            --not by much but it still happens. Most noticable at 0 radius, it will fail to impact items
-            --like 95% of the time. Setting a min value of 1.5 seems to help, and adding 1.5 makes it
-            --about equal with the visual radius of the effect. Otherwise things in the circle might not
-            --actually be hit even though visually it was.
+            -- Note about range/radius, things can be hit in the visual radius but outside of the actual radius,
+            -- not by much but it still happens. Most noticable at 0 radius, it will fail to impact items
+            -- like 95% of the time. Setting a min value of 1.5 seems to help, and adding 1.5 makes it
+            -- about equal with the visual radius of the effect. Otherwise things in the circle might not
+            -- actually be hit even though visually it was.
 
             if inRange then
-                -- bs.msg("inRange")
+                debug("combatOnly - %s", config.combatOnly)
                 transfer(ref)
                 addItem(ref)
-                -- looted[ref.object.name] = ref.stackSize
-                if being[ref.object.objectType] and ref.mobile.isDead == false then
+
+                if being[ref.object.objectType] and (ref.mobile.isDead == false) and ((config.combatOnly and ref.mobile.inCombat) or (not config.combatOnly)) then
                     teleport(ref)
                 end
             end
@@ -207,10 +212,10 @@ local function onTranspose(e)
             end
         end
 
-        if next(looted) then
+        if next(looted) then --Check if anything has been put in the looted table
             debug("%s", inspect(looted))
-            info.createLootNotification(looted)
-            looted = {}
+            info.createLootNotification(looted) --Create the loot UI
+            looted = {} --Clear the table
         else
             debug("Nothing looted")
         end

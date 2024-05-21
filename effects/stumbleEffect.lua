@@ -33,6 +33,14 @@ local function stumbleTick(e)
     bs.onTick(e, stumbleTimer)
 end
 
+---@param e tes3magicEffectCollisionEventData
+local function stumbleCollision(e)
+    if e.collision then
+        bs.msg("Look ma I collided")
+    end
+
+end
+
 
 local function addEffects()
     local stumbleEffect = bs.effect.create({
@@ -41,10 +49,12 @@ local function addEffects()
         school = stumble.school,
         hasNoMagnitude = true,
         hitSound = bs.sound.endboom1,
-        baseCost = 5,
+        areaSound = bs.sound.endboom1,
+        baseCost = 15,
 
         allowSpellmaking = true,
         onTick = stumbleTick,
+        onCollision = stumbleCollision,
     })
 end
 event.register("magicEffectsResolved", addEffects)
