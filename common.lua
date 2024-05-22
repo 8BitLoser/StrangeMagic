@@ -9,27 +9,27 @@ common.debug = common.log.debug
 ---Log for common
 local log = common.log
 
-function common.requireHelper(filePath)
-    -----------
-    local basePath = "Data Files/mwse/mods/"
-    local modPath = "BeefStranger.StrangeMagic.effects"
+-- function common.requireHelper(filePath)
+--     -----------
+--     local basePath = "Data Files/mwse/mods/"
+--     local modPath = "BeefStranger.StrangeMagic.effects"
 
-    local path = basePath..modPath:gsub("%.", "/") .. "/"
------------------
+--     local path = basePath..modPath:gsub("%.", "/") .. "/"
+-- -----------------
 
-    log.debug("filePath %s", path)
-    for file in lfs.dir(filePath) do
-        local fileName = file:match("(.+)%.lua$")
-        if fileName then
-            log.debug(modPath..".".. fileName)
-            dofile("BeefStranger.StrangeMagic.effects." .. fileName)
-        end
-    end
-end
+--     log.debug("filePath %s", path)
+--     for file in lfs.dir(filePath) do
+--         local fileName = file:match("(.+)%.lua$")
+--         if fileName then
+--             log.debug(modPath..".".. fileName)
+--             dofile("BeefStranger.StrangeMagic.effects." .. fileName)
+--         end
+--     end
+-- end
 
-function common.imports()
-    common.requireHelper("Data Files/MWSE/mods/BeefStranger/StrangeMagic/effects/")
-end
+-- function common.imports()
+--     common.requireHelper("Data Files/MWSE/mods/BeefStranger/StrangeMagic/effects/")
+-- end
 
 ---@enum magic 
 common.magic = {
