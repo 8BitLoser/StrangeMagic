@@ -4,6 +4,14 @@ local info = require("BeefStranger.StrangeMagic.common")
 local debug = info.debug
 local stumble = info.magic.stumble
 
+
+-- ---@param e tes3magicEffectCollisionEventData
+-- local function stumbleCollision(e)
+--     if e.collision then
+--         bs.msg("Look ma I collided")
+--     end
+-- end
+
 ---@param e tes3magicEffectTickEventData
 local function stumbleTick(e)
     local du = bs.duration(e, 241)
@@ -33,13 +41,7 @@ local function stumbleTick(e)
     bs.onTick(e, stumbleTimer)
 end
 
----@param e tes3magicEffectCollisionEventData
-local function stumbleCollision(e)
-    if e.collision then
-        bs.msg("Look ma I collided")
-    end
 
-end
 
 
 local function addEffects()
@@ -54,7 +56,7 @@ local function addEffects()
 
         allowSpellmaking = true,
         onTick = stumbleTick,
-        onCollision = stumbleCollision,
+        -- onCollision = stumbleCollision,
     })
 end
 event.register("magicEffectsResolved", addEffects)

@@ -1,16 +1,6 @@
 local bs = require("BeefStranger.functions")
 local common = {}
 
-function common.imports()
-    return
-    require("BeefStranger.StrangeMagic.effects.disarmTrapEffect"),
-    require("BeefStranger.StrangeMagic.effects.repairEffect"),
-    require("BeefStranger.StrangeMagic.effects.stumbleEffect"),
-    require("BeefStranger.StrangeMagic.effects.transposeEffect"),
-    require("BeefStranger.StrangeMagic.effects.enchantLearn"),
-    require("BeefStranger.StrangeMagic.effects.steal")
-end
-
 bs.createLog("StrangeMagic")
 
 common.log = bs.getLog("StrangeMagic")
@@ -18,6 +8,28 @@ common.debug = common.log.debug
 
 ---Log for common
 local log = common.log
+
+function common.requireHelper(filePath)
+    -----------
+    local basePath = "Data Files/mwse/mods/"
+    local modPath = "BeefStranger.StrangeMagic.effects"
+
+    local path = basePath..modPath:gsub("%.", "/") .. "/"
+-----------------
+
+    log.debug("filePath %s", path)
+    for file in lfs.dir(filePath) do
+        local fileName = file:match("(.+)%.lua$")
+        if fileName then
+            log.debug(modPath..".".. fileName)
+            dofile("BeefStranger.StrangeMagic.effects." .. fileName)
+        end
+    end
+end
+
+function common.imports()
+    common.requireHelper("Data Files/MWSE/mods/BeefStranger/StrangeMagic/effects/")
+end
 
 ---@enum magic 
 common.magic = {
@@ -68,17 +80,25 @@ common.magic = {
         spellId = "stealSpell",
         seller = "fargoth",
         school = tes3.magicSchool["illusion"]
+    },
+    speed = {
+        name = "speedForce",
+        id = 23337,
+        spellName = "Fleet Feet",
+        spellId = "speedSpell",
+        school = tes3.magicSchool["restoration"]
     }
+
 }
 
 local magic = common.magic
 
 function common.distributeSpells()
     for key, spellInfo in pairs(magic) do
-        if tes3.hasSpell{reference = spellInfo.seller, spell = spellInfo.spellId} then
+        if spellInfo.seller and not tes3.hasSpell{reference = spellInfo.seller, spell = spellInfo.spellId} then
             -- log:debug("%s has %s", spellInfo.seller, spellInfo.spellId)
             -- break
-        else
+
             -- log:debug("Adding %s to %s", spellInfo.spellId, spellInfo.seller)
             bs.sellSpell(spellInfo.seller, spellInfo.spellId)
         end

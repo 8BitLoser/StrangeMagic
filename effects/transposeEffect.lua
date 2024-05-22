@@ -2,7 +2,7 @@ local bs = require("BeefStranger.functions")
 local info = require("BeefStranger.StrangeMagic.common")
 local config = require("BeefStranger.StrangeMagic.config")
 
-local debug = info.log.debug
+local debug, trace = info.log.debug, info.log.trace
 local transpose = info.magic.transpose --Experimenting with centralized effect list
 local inspect = require("inspect").inspect
 
@@ -46,11 +46,11 @@ local function refCheck(ref) ---@param ref tes3reference --Function to test lock
     --lockNode Check
     if ref.lockNode then
         if ref.lockNode.trap then
-            debug("%s is trapped : skipping", ref.object.name)
+            trace("%s is trapped : skipping", ref.object.name)
             tes3.createVisualEffect({ lifespan = 2, reference = ref, magicEffectId = tes3.effect["fireDamage"], })
             return false
         elseif ref.lockNode.locked then
-            debug("%s is locked : skipping", ref.object.name)
+            trace("%s is locked : skipping", ref.object.name)
             return false
         end
         return true
@@ -61,14 +61,14 @@ local function refCheck(ref) ---@param ref tes3reference --Function to test lock
         if ref.mobile.isDead then
             return true
         end
-        debug("%s is not dead : skipping", ref.object.name)
+        trace("%s is not dead : skipping", ref.object.name)
         tes3.createVisualEffect({ lifespan = 2, reference = ref, magicEffectId = tes3.effect["fireDamage"], })
         return false
     end
 
     --Script Check
     if ref.object.script ~= nil then --false if object has script
-        debug("%s has script : skipping", ref.object.name)
+        trace("%s has script : skipping", ref.object.name)
         tes3.createVisualEffect({ lifespan = 2, reference = ref, magicEffectId = tes3.effect["damageAttribute"], })
         return false
     end
@@ -82,10 +82,10 @@ local function refCheck(ref) ---@param ref tes3reference --Function to test lock
     --Inventory check
     if hasInventory[ref.object.objectType] and #ref.object.inventory > 0 then
         if tes3.hasOwnershipAccess({ target = ref }) then
-            debug("Has Access to %s", ref.object.name)
+            trace("Has Access to %s", ref.object.name)
             return true
         end
-        debug("%s has valid inventory", ref.object.name)
+        trace("%s has valid inventory", ref.object.name)
         return true
     end
 
@@ -97,7 +97,8 @@ local looted = {}
 local function addItem(ref) ---@param ref tes3reference Add item to player then delete it
     if itemTypes[ref.object.objectType] and (ref.deleted == false) and not ref.object.script then --If the item is in the list and not marked deleted
         if tes3.getOwner({ reference = ref }) ~= nil and not tes3.hasOwnershipAccess({ target = ref }) then
-            tes3.createVisualEffect({ lifespan = 2, reference = ref, magicEffectId = tes3.effect["fireDamage"], })
+            bs.glowFX(ref, tes3.effect.fireDamage, 2)
+            -- tes3.createVisualEffect({ lifespan = 2, reference = ref, magicEffectId = tes3.effect["fireDamage"], })
             debug("%s is owned/you dont have access", ref.object.name)
             return
         end
@@ -133,26 +134,52 @@ end
 
 local function transfer(ref) ---@param ref tes3reference Just a little function to transfer/play effect if refCheck true
     if refCheck(ref) then
-        debug("REFCHECK - %s", refCheck(ref))
+
+        if hasInventory[ref.object.objectType] then
+            ref.object.inventory:resolveLeveledItems(tes3.mobilePlayer)
+            debug("has inventory")
+            for _, stack in pairs(ref.object.inventory) do
+                debug("%s", stack.object.name)
+
+                if looted[stack.object.name] then --Checks if the item is already in the table
+                    looted[stack.object.name] = looted[stack.object.name] + stack.count --Increase stack size by second item stack size
+                else
+                    looted[stack.object.name] = stack.count
+                end
+                
+            end
+        end
+        ---------------------------------------------
+
+        ---------------------------------------------
+
+        trace("REFCHECK - %s", refCheck(ref))
+        bs.glowFX(ref, transpose.id, 2)
         tes3.createVisualEffect({ lifespan = 2, reference = ref, magicEffectId = transpose.id, })
-        debug("playing effect on %s",ref.object.name)
+        trace("playing effect on %s",ref.object.name)
         tes3.transferInventory({from = ref, to = tes3.mobilePlayer})
-        tes3.playSound{sound = bs.bsSound.fantasyUI5}
-        debug("transfering from %s",ref.object.name)
+        -- tes3.playSound{sound = bs.bsSound.fantasyUI5}
+        bs.playSound(bs.bsSound.fantasyUI5)
+        trace("transfering from %s",ref.object.name)
+
+
     end
+    return looted
 end
 
+
 local function teleport(ref)---@param ref tes3reference Function to handle random teleporting of living beings
-    local pos, iter, rand, newPos = ref.position:copy(), 0, 1500, nil --setup pos as the current ref pos, and set iter to 0
+    local pos, iter, tpRand, newPos = ref.position:copy(), 0, 1500, nil --setup pos as the current ref pos, and set iter to 0
+    local maxIter = 100
     repeat --Repeat below until certain condition is met
         newPos = pos:copy()
-        newPos.x = pos.x + math.random(-rand, rand) --Randomize xyz by +-rand
-        newPos.y = pos.y + math.random(-rand, rand)
-        newPos.z = pos.z + math.random(0, rand/1.5) --dont want them going downwards, causes lots of iterations and maxing out
+        newPos.x = pos.x + math.random(-tpRand, tpRand) --Randomize xyz by +-rand
+        newPos.y = pos.y + math.random(-tpRand, tpRand)
+        newPos.z = pos.z + math.random(0, tpRand/1.5) --dont want them going downwards, causes lots of iterations and maxing out
         local collision = tes3.testLineOfSight({ position1 = pos, position2 = newPos}) --Gets los, using to get pos not in a wall
         iter = iter + 1 --Just a counter
         -- debug("iteration %s", iter)
-    until collision == true or iter >= 100 --Repeat until a random point has been generated thats in los of ref, to stop them tp into walls
+    until collision == true or iter >= maxIter --Repeat until a random point has been generated thats in los of ref, to stop them tp into walls
 
     ----debug("Ref pos %s, adjusted Pos %s", pos, newPos)
 
@@ -169,7 +196,7 @@ end
 --Transpose effect : Loot items from in radius of collision
 ---@param e tes3magicEffectCollisionEventData
 local function onTranspose(e)
-    local config = require("BeefStranger.StrangeMagic.config")
+    -- local config = require("BeefStranger.StrangeMagic.config")
     if e.collision then
         -- debug("collision - %s", e.collision)
         -- debug("colliderRef - %s", e.collision.colliderRef)
@@ -192,7 +219,6 @@ local function onTranspose(e)
             -- actually be hit even though visually it was.
 
             if inRange then
-                debug("combatOnly - %s", config.combatOnly)
                 transfer(ref)
                 addItem(ref)
 
@@ -217,7 +243,7 @@ local function onTranspose(e)
             info.createLootNotification(looted) --Create the loot UI
             looted = {} --Clear the table
         else
-            debug("Nothing looted")
+            -- debug("Nothing looted")
         end
     end
 end

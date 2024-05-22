@@ -18,30 +18,26 @@ local enchantable = {
 local function generateSpell(stack)
     ---Table so I can add all effects to spell.create
     local spellData = {
-        id = string.format("%q", stack.id),
+        id = string.format("%q", stack.id), --tostring(stack.id),
         name = string.format("(E) %s", stack.enchant.object.name),
     }
     ---Add effect min and max to the spellData table, does it in this format (effect or effect2-8)
-    for i, effect in ipairs(stack.effect) do
+    -- ---@param effect tes3effect
+    for i, effect in ipairs(stack.effect) do ---@as tes3effect
         spellData["effect" .. (i == 1 and "" or i)] = effect.id--effect (if 1 then its just effect, if i is more than 1 than it gets added to effect (effect2))
         spellData["min" .. (i == 1 and "" or i)] = effect.min
         spellData["max" .. (i == 1 and "" or i)] = effect.max
-
-        if stack.castType == 3 then --
-            spellData["duration" .. (i == 1 and "" or i)] = 60 ---@type integer
-        else
-            spellData["duration" .. (i == 1 and "" or i)] = effect.duration ---@type integer
-        end
+        spellData["duration" .. (i == 1 and "" or i)] = (stack.castType == 3 and 60 or effect.duration) ---@type integer
+        spellData["range" .. (i == 1 and "" or i)] = effect.rangeType
+        spellData["radius" .. (i == 1 and "" or i)] = effect.radius
     end
+
     ---spell creation
     local spell = bs.spell.create(spellData)
 
-    ----adjusting cost
-    if stack.castType == 3 then
-        spell.magickaCost = math.clamp(bs.spell.calculateEffectCost(spell), 5, 300) ---Placeholder, min of 5 max of 300 for constantEffects
-    else
-        spell.magickaCost = math.clamp(bs.spell.calculateEffectCost(spell), 5, 150) ---Placeholder for other types min 5 max 150
-    end
+    local spellCost = bs.spell.calculateEffectCost(spell)
+    spell.magickaCost = (stack.castType == 3 and math.clamp(spellCost, 5, 300)) or math.clamp(spellCost, 5, 150)
+
     return spell
 end
 
@@ -65,7 +61,9 @@ local function getEnchanted()
                     min = effect.min,
                     max = effect.max,
                     cost = effect.cost,
-                    object = effect.object
+                    object = effect.object,
+                    radius = effect.radius,
+
                 })
                 totalCost = totalCost + effect.cost
                 -- log("%q - Effects - %s - %s",item.name, effect.object.name, effect.min)
@@ -100,7 +98,7 @@ event.register("loaded", function()
 
     -- Initialize bsEnchant.know if it doesn't exist
     bsEnchant.know = bsEnchant.know or {}
-    debug("%s", inspect(bsEnchant))
+    -- debug("%s", inspect(bsEnchant))
 end)
 
 local function enchantMenu() --Learning UI, its not going well
@@ -144,7 +142,7 @@ local function enchantMenu() --Learning UI, its not going well
         local deconCount = bsEnchant[enchantID] or 0 --deconCount = value saved in bsEnchant or 0 if it doesnt exist
         local known = bsEnchant.know[enchantID] == true --Conditional check, if .know is false or nil know = false, if its true, know = true
 
-        debug("in loop %s", inspect(bsEnchant))
+        -- debug("in loop %s", inspect(bsEnchant))
         -- debug("before - %s", tostring(known)) 
 
         if deconCount < 5 then --Can use the spell 5 times to gain xp after enchant has been learned, means you have 6 total decons, but only 5 give xp
@@ -172,9 +170,12 @@ local function enchantMenu() --Learning UI, its not going well
                 end
 
                 tes3.removeItem { reference = tes3.mobilePlayer, item = item.id } --Destroy item
-                tes3.addSpell({ reference = tes3.mobilePlayer, spell = generateSpell(item) }) --Generate Spell from enchant
-                tes3.playSound { sound = bs.sound.enchant_success, volume = .7 }
-                tes3.playSound { sound = bs.bsSound.breakWood, volume = 1, pitch = 1.5 }
+                bs.addSpell(tes3.mobilePlayer, generateSpell(item))
+                -- tes3.addSpell({ reference = tes3.mobilePlayer, spell = generateSpell(item) }) --Generate Spell from enchant
+                bs.playSound(bs.sound.enchant_success, .7)
+                bs.playSound(bs.bsSound.breakWood, 1, 1.5)
+                -- tes3.playSound { sound = bs.sound.enchant_success, volume = .7 }
+                -- tes3.playSound { sound = bs.bsSound.breakWood, volume = 1, pitch = 1.5 }
 
                 destroy()
             end)
@@ -191,13 +192,13 @@ local function enchantMenu() --Learning UI, its not going well
     tes3ui.enterMenuMode(enchantMenuID)
     enMenu:updateLayout()
 end
-
+-------------------------Debug----------------------------------
 bs.keyUp("u", function ()
     tes3.showSpellmakingMenu{serviceActor = tes3.player}
 end)
 
 bs.keyUp(";", enchantMenu)
-
+----------------------------------------------------------------
 ---@param e tes3magicEffectTickEventData
 local function onLearnTick(e)
     bs.onTick(e, function()
@@ -246,7 +247,8 @@ local function charGenFinishedCallback(e)
         if skill == tes3.skill.enchant and tes3.skill.mysticism then
             log("enchant is major skill")
             tes3.getObject(learn.spellId).magickaCost = bs.lerp(100, 5, 90, tes3.mobilePlayer.enchant.current, false)
-            tes3.addSpell({ reference = tes3.mobilePlayer, spell = learn.spellName })
+            -- tes3.addSpell({ reference = tes3.mobilePlayer, spell = learn.spellName })
+            bs.addSpell(tes3.mobilePlayer, learn.spellName)
             bs.refreshSpell(tes3.player, learn.spellName)
         end
     end

@@ -2,7 +2,12 @@
 local bs = require("BeefStranger.functions")
 local common = require("BeefStranger.StrangeMagic.common")
 local magic = require("BeefStranger.StrangeMagic.common").magic
-common.imports() --How to import from common when requiring common on imported files
+
+-- common.imports() --How to import from common when requiring common on imported files
+
+bs.importDir("BeefStranger.StrangeMagic.effects")
+
+
 
 local log = bs.getLog("StrangeMagic")
 local debug, info = log.debug, log.info
@@ -48,9 +53,9 @@ local function registerSpells()
         id = magic.stumble.spellId,
         name = magic.stumble.spellName,
         effect = magic.stumble.id,
-        radius = 5,
+        -- radius = 5,
         min = 1,
-        duration = 5,
+        duration = 6,
         range = tes3.effectRange.target,
     }
 
@@ -69,11 +74,21 @@ local function registerSpells()
         effect = magic.steal.id,
         range = tes3.effectRange.target,
         alwaysSucceeds = true,
-        cost = 0,
-        duration = 1,
+        cost = 25,
+        -- duration = 1,
         -- castType = 
         -- effect2 = tes3.effect.light,
         -- duration2 = 1
+    }
+
+    bs.spell.create{
+        id = magic.speed.spellId,
+        name = magic.speed.spellName,
+        effect = magic.speed.id,
+        range = tes3.effectRange.self,
+        min = 5,
+        cost = 25
+
     }
 end
 event.register("loaded", registerSpells, { priority = 1 })
@@ -82,7 +97,7 @@ local function addSpells()
     common.distributeSpells()
 
     ---------Debug----------
-    bs.addSpell(tes3.player, magic.steal.spellId)
+    bs.addSpell(tes3.player, magic.speed.spellId)
     -- tes3.mobilePlayer:equipMagic{source = magic.steal.spellId}
     -- bs.equipMagic(magic.steal.spellId)
 end
@@ -90,17 +105,15 @@ event.register(tes3.event.loaded, addSpells)
 
 
 bs.keyUp("p", function()
---    local target = bs.rayCast(900)
---    if not target then return end
---    debug("`npc` NPC = %s", bs.typeCheck(target, "npc", true))
---    debug("tes3.objectType.npc NPC = %s", bs.typeCheck(target, tes3.objectType.npc))
+   local target = bs.rayCast(900)
+   target.object.inventory:resolveLeveledItems(tes3.mobilePlayer)
+   
+   for _, itemStack in pairs(target.object.inventory) do
+    -- itemStack is of tes3itemStack type
+    local item = itemStack.object
+    debug("The container has %s of %s in inventory.", itemStack.count, item.id)
+end
 
---    local menu = tes3ui.createMenu{
---         id = "bsTest"
---     }
---     menu.alpha = 0.75
---     menu.absolutePosAlignX = 50
---     menu.absolutePosAlignY = 10
 end)
 
 -- bs.keyUp("l", function ()
@@ -123,9 +136,13 @@ bs.keyUp("i", function ()
     -- -- debug("[1] - %s", target.object.inventory)
     -- -- tes3.mobilePlayer:exerciseSkill(tes3.skill.enchant, 100)
     -- bs.bulkAddSpells(tes3.player, magic) ---Add all spells to player
+    -- bs.playSound(bs.sound.bell6)
 
-    tes3ui.showNotifyMenu("Notify:I pressed")
-    bs.msg("MSG:I")
+    -- tes3ui.showNotifyMenu("Notify:I pressed")
+    -- bs.msg("MSG:I")
+
+  
+
 
 
 end)
@@ -173,12 +190,6 @@ local itemTest = {
 
 --     return true
 -- end
-
-
-bs.keyUp("p", function()
-    local target = bs.rayCast(500, true)
-    debug("%s - %s", target and target.object.name, bs.objectTypeNames[target and target.object.objectType])
-    end)
 
 bs.keyUp("o", function ()
     debug("%s", config.combatOnly)
