@@ -34,80 +34,141 @@ local log = common.log
 ---@enum magic 
 common.magic = {
     repair = {
-        name = "repairEffect",
+        idName = "repairEffect",
         id = 23331,
-        spellName = "Repair Equipment",
-        spellId = "repairSpell",
+        name = "Repair",
         seller = "tanar llervi", --Ald-ruhn mages guild
-        school = tes3.magicSchool["alteration"]
+        school = tes3.magicSchool["alteration"],
+        spell = {
+            name = "Repair Equipment",
+            id = "repairSpell",
+            effect = 23331,
+            min = 2,
+            duration = 5,
+            range = tes3.effectRange.self,
+        }
     },
     disarm = {
-        name = "disarmEffect",
+        idName = "disarmEffect",
         id = 23332,
-        spellName = "Disarm",
-        spellId = "disarmSpell",
+        name = "Disarm",
         seller = "eraamion",
-        school = tes3.magicSchool["alteration"]
+        school = tes3.magicSchool["alteration"],
+        spell = {
+            name = "Disarm",
+            id = "disarmSpell",
+            effect = 23332,
+            min = 35,
+            range = tes3.effectRange.target,
+        }
     },
     transpose = {
-        name = "transposeEffect",
+        idName = "transposeEffect",
         id = 23333,
-        spellName = "Transposition",
-        spellId = "transposeSpell",
+        name = "Transposition",
         seller = "gildan",
-        school = tes3.magicSchool["mysticism"]
+        school = tes3.magicSchool["mysticism"],
+        spell = {
+            name = "Transposition",
+            id = "transposeSpell",
+            effect = 23333,
+            min = 0,
+            range = tes3.effectRange.target,
+            radius = 10,
+            cost = 55
+        }
     },
     stumble = {
-        name = "stumbleEffect",
+        idName = "stumbleEffect",
         id = 23334,
-        spellName = "Stumble",
-        spellId = "stumbleSpell",
+        name = "Stumble",
         seller = "sirilonwe",
-        school = tes3.magicSchool["illusion"]
+        school = tes3.magicSchool["illusion"],
+        spell = {
+            name = "Stumble",
+            id = "stumbleSpell",
+            effect = 23334,
+            min = 1,
+            duration = 6,
+            range = tes3.effectRange.target,
+        }
     },
     learn = {
-        name = "enchantLearn",
+        idName = "enchantLearn",
         id = 23335,
-        spellName = "Deconstruct Enchant",
-        spellId = "learnSpell",
+        name = "Deconstruct Enchant",
         seller = "galbedir",
-        school = tes3.magicSchool["mysticism"]
+        school = tes3.magicSchool["mysticism"],
+        spell = {
+            name = "Deconstruct Enchant",
+            id = "learnSpell",
+            effect = 23335,
+            range = tes3.effectRange.self,
+            duration = 0,
+        }
     },
     steal = {
-        name = "stealEffect",
+        idName = "stealEffect",
         id = 23336,
-        spellName = "Steal",
-        spellId = "stealSpell",
+        name = "Steal",
         seller = "fargoth",
-        school = tes3.magicSchool["illusion"]
+        school = tes3.magicSchool["illusion"],
+        spell = {
+            name = "Steal",
+            id = "stealSpell",
+            effect = 23336,
+            range = tes3.effectRange.target,
+            alwaysSucceeds = true,
+            cost = 25,
+        }
     },
     speed = {
-        name = "speedForce",
+        idName = "speedForce",
         id = 23337,
-        spellName = "Fleet Feet",
-        spellId = "speedSpell",
-        school = tes3.magicSchool["restoration"]
-    }
+        name = "Fleet Feet",
+        school = tes3.magicSchool["restoration"],
+        spell = {
+            name = "Fleet Feet",
+            id = "speedSpell",
+            effect = 23337,
+            range = tes3.effectRange.self,
+            min = 5,
+            cost = 25,
+        }
+    },
+    blink = {
+        idName = "bsBlink",
+        id = 23338,
+        name = "Blink",
+        school = tes3.magicSchool["mysticism"],
 
+        spell = {
+            name = "Blink",
+            id = "blinkSpell",
+            effect = 23338,
+            range = tes3.effectRange.target,
+            min = 25,
+            max = 55,
+        }
+    },
 }
-
 local magic = common.magic
 
 function common.distributeSpells()
     for key, spellInfo in pairs(magic) do
-        if spellInfo.seller and not tes3.hasSpell{reference = spellInfo.seller, spell = spellInfo.spellId} then
+        if spellInfo.seller and not tes3.hasSpell{reference = spellInfo.seller, spell = spellInfo.spell.id} then
             -- log:debug("%s has %s", spellInfo.seller, spellInfo.spellId)
             -- break
 
             -- log:debug("Adding %s to %s", spellInfo.spellId, spellInfo.seller)
-            bs.sellSpell(spellInfo.seller, spellInfo.spellId)
+            bs.sellSpell(spellInfo.seller, spellInfo.spell.id)
         end
     end
 end
 
 function common.claimEffects()
     for key, effects in pairs(magic) do
-        tes3.claimSpellEffectId(effects.name, effects.id)
+        tes3.claimSpellEffectId(effects.idName, effects.id)
     end
 end
 
@@ -181,129 +242,43 @@ function common.createLootNotification(lootedItems)
     return true
 end
 
--- ---Get if player already has spell and grant xp instead
--- local function generateSpell(stack)
---     ---Table so I can add all effects to spell.create
---     local spellData = {
---         id = string.format("%q", stack.id),
---         name = string.format("(E) %s", stack.enchant.object.name),
---     }
---     ---Add effect min and max to the spellData table, does it in this format (effect or effect2-8)
---     for i, effect in ipairs(stack.effect) do
---         spellData["effect" .. (i == 1 and "" or i)] = effect.id--effect (if 1 then its just effect, if i is more than 1 than it gets added to effect (effect2))
---         spellData["min" .. (i == 1 and "" or i)] = effect.min
---         spellData["max" .. (i == 1 and "" or i)] = effect.max
 
---         if stack.castType == 3 then --
---             spellData["duration" .. (i == 1 and "" or i)] = 60 ---@type integer
---         else
---             spellData["duration" .. (i == 1 and "" or i)] = effect.duration ---@type integer
---         end
---     end
---     ---spell creation
---     local spell = bs.spell.create(spellData)
+-- function common.createLootPopup(item)
+--     -- Create the menu
+--     local menu = tes3ui.createMenu{ id = tes3ui.registerID("CustomLootPopup"), fixedFrame = true }
 
---     ----adjusting cost
---     if stack.castType == 3 then
---         spell.magickaCost = math.clamp(bs.spell.calculateEffectCost(spell), 5, 300) ---Placeholder, min of 5 max of 300 for constantEffects
---     else
---         spell.magickaCost = math.clamp(bs.spell.calculateEffectCost(spell), 5, 150) ---Placeholder for other types min 5 max 150
---     end
---     return spell
--- end
+--     -- Set the menu properties
+--     menu.minWidth = 300
+--     menu.minHeight = 100
+--     menu.positionX = 150 -- Center the menu
+--     menu.positionY = 50
+--     menu.flowDirection = "top_to_bottom"
 
-
--- function common.enchantMenu(enchantTable)
---     local enchantMenuID = tes3ui.registerID("bsEnchantMenu")
---     local width, height = tes3.getViewportSize()
-
---     local enMenu = tes3ui.createMenu{id = enchantMenuID, fixedFrame = true}
---     enMenu.minWidth = 300
---     enMenu.minHeight = 100
---     enMenu.positionX = 0.5 * (width - enMenu.minHeight) -- Center the menu vertically
---     enMenu.positionY = 0.5 * (height - enMenu.minHeight) -- Center the menu vertically
---     enMenu.flowDirection = "top_to_bottom"
-
---     local label = enMenu:createLabel{ text = "Enchanted Items "}
+--     -- Add a label with the item's name
+--     local label = menu:createLabel{ text = "You found: " .. item.name }
 --     label.borderTop = 10
 --     label.borderBottom = 10
 
---     local destroy = function () enMenu:destroy() tes3ui.leaveMenuMode() end
-
---     for index, item in ipairs(enchantTable) do
---         local enItems = enMenu:createButton{text = item.name .. " - ".. item.enchant.object.name}
---         enItems:register("help", function(e)
---             local tooltip = tes3ui.createTooltipMenu{item = item.id}
---             tooltip:createLabel{text = "Test ToolTip"}
---         end)
---         enItems:register("mouseClick", function ()
---             tes3.removeItem { reference = tes3.mobilePlayer, item = item.id }
---             tes3.addSpell({ reference = tes3.mobilePlayer, spell = generateSpell(item) })
---             tes3.playSound { sound = bs.sound.enchant_success, volume = .7 }
---             tes3.playSound { sound = bs.bsSound.breakWood, volume = 1, pitch = 1.5 }
-
---             destroy()
---         end)
---     end
-
-
-
-
--- -------------------------------placeholder
---     local takeButton = enMenu:createButton{ text = "Take" }
+--     -- Add a button to take the item
+--     local takeButton = menu:createButton{ text = "Take" }
 --     takeButton:register("mouseClick", function()
+--         tes3.addItem{ reference = tes3.player, item = item, playSound = true }
 --         tes3.messageBox{ message = "You took the item!" }
---         destroy()
+--         menu:destroy()
+--         tes3ui.leaveMenuMode()
 --     end)
 
 --     -- Add a button to close the popup
---     local closeButton = enMenu:createButton{ text = "Close" }
---     closeButton:register("mouseClick", destroy)
+--     local closeButton = menu:createButton{ text = "Close" }
+--     closeButton:register("mouseClick", function()
+--         menu:destroy()
+--         tes3ui.leaveMenuMode()
+--     end)
 
---     tes3ui.enterMenuMode(enchantMenuID)
---     enMenu:updateLayout()
-
+--     -- Update the UI
+--     tes3ui.enterMenuMode(tes3ui.registerID("CustomLootPopup"))
+--     menu:updateLayout()
 -- end
-
-
-
-
-function common.createLootPopup(item)
-    -- Create the menu
-    local menu = tes3ui.createMenu{ id = tes3ui.registerID("CustomLootPopup"), fixedFrame = true }
-
-    -- Set the menu properties
-    menu.minWidth = 300
-    menu.minHeight = 100
-    menu.positionX = 150 -- Center the menu
-    menu.positionY = 50
-    menu.flowDirection = "top_to_bottom"
-
-    -- Add a label with the item's name
-    local label = menu:createLabel{ text = "You found: " .. item.name }
-    label.borderTop = 10
-    label.borderBottom = 10
-
-    -- Add a button to take the item
-    local takeButton = menu:createButton{ text = "Take" }
-    takeButton:register("mouseClick", function()
-        tes3.addItem{ reference = tes3.player, item = item, playSound = true }
-        tes3.messageBox{ message = "You took the item!" }
-        menu:destroy()
-        tes3ui.leaveMenuMode()
-    end)
-
-    -- Add a button to close the popup
-    local closeButton = menu:createButton{ text = "Close" }
-    closeButton:register("mouseClick", function()
-        menu:destroy()
-        tes3ui.leaveMenuMode()
-    end)
-
-    -- Update the UI
-    tes3ui.enterMenuMode(tes3ui.registerID("CustomLootPopup"))
-    menu:updateLayout()
-end
 
 
 return common

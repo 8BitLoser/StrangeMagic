@@ -9,6 +9,7 @@ local inspect = require("inspect").inspect
 -- tes3.claimSpellEffectId("bsTranspose", transpose.id)
 --Boolean Table of loose item objectTypes
 local itemTypes = {
+    [tes3.objectType.alchemy] = true,
     [tes3.objectType.apparatus] = true,
     [tes3.objectType.armor] = true,
     [tes3.objectType.book] = true,
@@ -24,10 +25,11 @@ local hasInventory = {
 }
 --Table of types to loop over in cell
 local iterateRefs = {
+    tes3.objectType.alchemy,
     tes3.objectType.armor,
     tes3.objectType.book,
-    tes3.objectType.container,
     tes3.objectType.clothing,
+    tes3.objectType.container,
     tes3.objectType.creature,
     tes3.objectType.ingredient,
     tes3.objectType.miscItem,
@@ -254,7 +256,7 @@ local function addEffects()
         name = "Transposistion",
         school = tes3.magicSchool["mysticism"],
 
-        baseCost = 10,
+        baseCost = 150,
         speed = 10,
         hitSound = bs.bsSound.fantasyUI5,
         -- castSound = bs.bsSound.magicImpact,

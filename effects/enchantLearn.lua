@@ -112,9 +112,14 @@ local function enchantMenu() --Learning UI, its not going well
         tes3ui.findMenu("bsEnchantMenu"):destroy()
     end
 
+    ----------------------------------------------------------------------------------------------------
+    ---`Menu Creation`
+    ----------------------------------------------------------------------------------------------------
+    ---contentPath = "menu_thin_border.NIF"
     local enMenu = tes3ui.createMenu{id = enchantMenuID, fixedFrame = true} --Create the top most menu, if fixedFrame ~= true then the menu simply isnt there
     enMenu.minWidth = 400
     enMenu.minHeight = 200
+    
     enMenu.positionX = 0.5 * (width - enMenu.minHeight) -- Center the menu vertically
     enMenu.positionY = 0.5 * (height - enMenu.minHeight) -- Center the menu vertically
     enMenu.flowDirection = "top_to_bottom"
@@ -122,18 +127,37 @@ local function enchantMenu() --Learning UI, its not going well
     enMenu.paddingAllSides = 5
     enMenu.autoWidth = true
     enMenu.autoHeight = true
-    -- enMenu.color = {0.251, 0.251, 0.216}
 
-    local header = enMenu:createBlock()
+    ----------------------------------------------------------------------------------------------------
+    ---`Header`
+    ----------------------------------------------------------------------------------------------------
+    local header = enMenu:createBlock{id = "Header"}
     header.flowDirection = tes3.flowDirection.leftToRight
     header.autoHeight = true
     header.autoWidth = true
-    header.paddingAllSides = 5
-    local headerText = header:createLabel{ text = "Enchanted Items"}
+    -- header.paddingAllSides = 5
+    header.paddingLeft = 10
+    header.paddingBottom = 2
+    local headerText = header:createLabel{ id = "Header Text", text = "Enchanted Items"}
     headerText.color = tes3ui.getPalette(tes3.palette.activePressedColor)
     header.borderBottom = 10
     header.font = 2
-    header:createDivider({})
+    -- header:createDivider({id = "Divider"})
+    -- header:createThinBorder({id = "ThinBorder"})
+
+    local headerDivider = enMenu:createDivider{id = "Header Divider"}
+    headerDivider.autoHeight = true
+    headerDivider.autoWidth = true
+    headerDivider.borderBottom = 20
+
+    ----------------------------------------------------------------------------------------------------
+    ---`Buttons`
+    ----------------------------------------------------------------------------------------------------
+    local buttons = headerDivider:createBlock{id = "buttons"}
+    buttons.flowDirection = tes3.flowDirection.topToBottom
+    buttons.autoHeight = true
+    buttons.autoWidth = true
+    buttons.borderTop = 10
 
     local destroy = function () enMenu:destroy() tes3ui.leaveMenuMode() end --A function to destroy and leaveMenuMode, otherwise it wouldnt close
 
@@ -142,21 +166,35 @@ local function enchantMenu() --Learning UI, its not going well
         local deconCount = bsEnchant[enchantID] or 0 --deconCount = value saved in bsEnchant or 0 if it doesnt exist
         local known = bsEnchant.know[enchantID] == true --Conditional check, if .know is false or nil know = false, if its true, know = true
 
+        -- local border = enMenu:createThinBorder({name = "Items"})
+        -- border.autoHeight = true
+        -- border.autoWidth = true
+        -- local buttons = border:createBlock()
+
         -- debug("in loop %s", inspect(bsEnchant))
         -- debug("before - %s", tostring(known)) 
 
         if deconCount < 5 then --Can use the spell 5 times to gain xp after enchant has been learned, means you have 6 total decons, but only 5 give xp
-            ---Create the button for each item if it hasnt been decon 6 times, 
-            local enItems = enMenu:createButton { text =  bs.sf("%s %s - %s", (known and "[Known ]" or ""), item.name, item.enchant.object.name)}
+            ---Create the button for each item if it hasnt been decon 6 times,
+
+            local enItems = buttons:createButton { id = "Buttons" ,text =  bs.sf("%s %s - %s", (known and "[Known ]" or ""), item.name, item.enchant.object.name)}
             -- local enItems = enMenu:createButton { text =  (known and "[Known] " or "").. item.name .. " - " .. item.enchant.object.name  }
 
             --Tooltip Creation
             enItems:register("help", function(e) --"help" is where you create a tooltip, and other non pause ui
-                local tooltip = tes3ui.createTooltipMenu { item = item.id } --Actual tooltip creation on the item
-                tooltip:createLabel { text = "Description: blahblahblah" } -- Add more detailed info
+                local tooltip = tes3ui.createTooltipMenu {id = "Tooltip", item = item.id } --Actual tooltip creation on the item
+                if not known then
+                    tooltip:createLabel { text = "Enchantment not known" } -- Add more detailed info
+                end
+                
 
                 if known then
-                    tooltip:createLabel { text = bs.sf("Deconstructed : %s/5", deconCount) }
+                    tooltip:createLabel{ text = "Deconstructed"}
+                    -- tooltip.paddingTop = 15
+                    local fillbar = tooltip:createFillBar{ id = "fillbar", current = deconCount, max = 5}
+                    fillbar.widget.fillColor = {0.129, 0.522, 0.941}
+                    -- tooltip.paddingBottom = 15
+                    -- tooltip:createLabel { text = bs.sf("Deconstructed : %s/5", deconCount) }
                 end
             end)
 
@@ -181,21 +219,21 @@ local function enchantMenu() --Learning UI, its not going well
             end)
         end
     end
-    -- Add a button to close the popup
-    local footer = enMenu:createBlock()
+    ----------------------------------------------------------------------------------------------------
+    ---`Footer`
+    ----------------------------------------------------------------------------------------------------
+    local footer = enMenu:createBlock({id = "Footer"})
     footer.autoHeight = true
     footer.autoWidth = true
-    footer.borderTop = 25
-    local closeButton = footer:createButton { text = "Close" }
+    footer.borderTop = 35
+    local closeButton = footer:createButton { id = "Close Button",text = "Close" }
     closeButton:register("mouseClick", destroy)
 
     tes3ui.enterMenuMode(enchantMenuID)
     enMenu:updateLayout()
 end
 -------------------------Debug----------------------------------
-bs.keyUp("u", function ()
-    tes3.showSpellmakingMenu{serviceActor = tes3.player}
-end)
+
 
 bs.keyUp(";", enchantMenu)
 ----------------------------------------------------------------

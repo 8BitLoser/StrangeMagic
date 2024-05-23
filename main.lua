@@ -7,6 +7,8 @@ local magic = require("BeefStranger.StrangeMagic.common").magic
 
 bs.importDir("BeefStranger.StrangeMagic.effects")
 
+local inspect = require("inspect").inspect
+
 
 
 local log = bs.getLog("StrangeMagic")
@@ -21,75 +23,24 @@ local function initialized()
     bs.sound.register()
 end
 
+-- event.register("loaded", function ()
+--     magic.learn.spell.cost = bs.lerp(100, 5, 90, tes3.mobilePlayer.enchant.current, false)
+-- end, {priority = 2})
+
 local function registerSpells()
 
-    bs.spell.create { --Added
-        id = magic.transpose.spellId,
-        name = magic.transpose.spellName,
-        effect = magic.transpose.id,
-        min = 25,
-        range = tes3.effectRange.target,
-        radius = 10
-    }
+    --Setting learn cost here, because it needs mobilePlayer to be loaded to calculate
+    magic.learn.spell.cost = bs.lerp(100, 5, 90, tes3.mobilePlayer.enchant.current, false)
 
-    bs.spell.create { --Added
-        id = magic.repair.spellId,
-        name = magic.repair.spellName,
-        effect = magic.repair.id,
-        min = 2,
-        duration = 5,
-        range = tes3.effectRange["self"],
-    }
-
-    bs.spell.create { --Added
-        id = magic.disarm.spellId,
-        name = magic.disarm.spellName,
-        effect = magic.disarm.id,
-        min = 35,
-        range = tes3.effectRange.target,
-    }
-
-    bs.spell.create { --Added
-        id = magic.stumble.spellId,
-        name = magic.stumble.spellName,
-        effect = magic.stumble.id,
-        -- radius = 5,
-        min = 1,
-        duration = 6,
-        range = tes3.effectRange.target,
-    }
-
-    bs.spell.create { --Added
-        id = magic.learn.spellId,
-        name = magic.learn.spellName,
-        effect = magic.learn.id,
-        range = tes3.effectRange.self,
-        cost = bs.lerp(100, 5, 90, tes3.mobilePlayer.enchant.current, false),
-        duration = 0
-    }
-
-    bs.spell.create{
-        id = magic.steal.spellId,
-        name = magic.steal.spellName,
-        effect = magic.steal.id,
-        range = tes3.effectRange.target,
-        alwaysSucceeds = true,
-        cost = 25,
-        -- duration = 1,
-        -- castType = 
-        -- effect2 = tes3.effect.light,
-        -- duration2 = 1
-    }
-
-    bs.spell.create{
-        id = magic.speed.spellId,
-        name = magic.speed.spellName,
-        effect = magic.speed.id,
-        range = tes3.effectRange.self,
-        min = 5,
-        cost = 25
-
-    }
+    bs.spell.create(magic.blink.spell)
+    bs.spell.create(magic.disarm.spell)
+    bs.spell.create(magic.learn.spell)
+    bs.spell.create(magic.repair.spell)
+    bs.spell.create(magic.speed.spell)
+    bs.spell.create(magic.steal.spell)
+    bs.spell.create(magic.stumble.spell)
+    bs.spell.create(magic.transpose.spell)
+ 
 end
 event.register("loaded", registerSpells, { priority = 1 })
 
@@ -97,102 +48,37 @@ local function addSpells()
     common.distributeSpells()
 
     ---------Debug----------
-    bs.addSpell(tes3.player, magic.speed.spellId)
+    -- bs.addSpell(tes3.player, magic.speed.spell.id)
     -- tes3.mobilePlayer:equipMagic{source = magic.steal.spellId}
     -- bs.equipMagic(magic.steal.spellId)
+    ------------------------
 end
 event.register(tes3.event.loaded, addSpells)
 
-
-bs.keyUp("p", function()
-   local target = bs.rayCast(900)
-   target.object.inventory:resolveLeveledItems(tes3.mobilePlayer)
-   
-   for _, itemStack in pairs(target.object.inventory) do
-    -- itemStack is of tes3itemStack type
-    local item = itemStack.object
-    debug("The container has %s of %s in inventory.", itemStack.count, item.id)
-end
-
+bs.keyUp("b", function ()
+    tes3.showSpellmakingMenu{serviceActor = tes3.player}
 end)
 
--- bs.keyUp("l", function ()
---     local target = bs.rayCast(900)
---     bs.typeCheck(target, "npc", true)
---     debug("fight - %s", target.object.mobile.fight)
---     debug("flee value = %s", target.object.mobile.flee)
---     target.object.mobile:stopCombat()
-
---     target.object.mobile.fight = 0
---     target.object.mobile.flee = 1000
-
-
---     debug("%s - %s",target.object, type(target.object))
--- end)
+bs.keyUp(".", function ()
+    
+end)
 
 bs.keyUp("i", function ()
-    -- local target = bs.rayCast(900) 
-    -- tes3.messageBox("I Pressed")
-    -- -- debug("[1] - %s", target.object.inventory)
-    -- -- tes3.mobilePlayer:exerciseSkill(tes3.skill.enchant, 100)
-    -- bs.bulkAddSpells(tes3.player, magic) ---Add all spells to player
-    -- bs.playSound(bs.sound.bell6)
-
-    -- tes3ui.showNotifyMenu("Notify:I pressed")
-    -- bs.msg("MSG:I")
-
-  
-
-
-
+    local target = bs.rayCast(900)
+    if target and target.object then
+        debug("%s - %s", target.object.name, bs.objectTypeNames[target.object.objectType])
+        bs.msg("%s - %s", target.object.name, bs.objectTypeNames[target.object.objectType])
+    end
 end)
 
-local itemTest = {
-    [1] = "beep",
-    [2] = "boop"
-}
----CHATGPT--- FIGURE OUT HOW THIS WORKS AND IMPLEMENT IT
--- local function createLootNotification(lootedItems)
---     -- Define the notification box's unique ID and position
---     local notifBoxID = tes3ui.registerID("LootNotificationBox")
---     local notifBox = tes3ui.createHelpLayerMenu({ id = notifBoxID })
---     notifBox.absolutePosAlignX = 0.01  -- Left side of the screen
---     notifBox.absolutePosAlignY = 0.1   -- Near the top of the screen
---     notifBox.autoHeight = true
---     notifBox.autoWidth = true
---     notifBox.flowDirection = tes3.flowDirection.topToBottom
---     notifBox.borderAllSides = 50
---     -- notifBox.paddingAllSides = 50
-
---     -- Title for the notification
---     local titleBlock = notifBox:createBlock({})
---     titleBlock.autoHeight = true
---     titleBlock.autoWidth = true
---     local titleLabel = titleBlock:createLabel({ text = "Items Looted:" })
---     titleLabel.color = {1, 1, 1}  -- White color
---     titleLabel.font = 1           -- Bold font
-
---     -- List each looted item
---     for _, item in ipairs(lootedItems) do
---         local itemBlock = notifBox:createBlock({})
---         itemBlock.autoHeight = true
---         itemBlock.autoWidth = true
---         local itemLabel = itemBlock:createLabel({ text = item })
---         itemLabel.color = {0.8, 0.8, 0.8}  -- Light grey color
---     end
-
---     -- Update the layout and make the box visible
---     notifBox:updateLayout()
---     notifBox.visible = true
-
---     -- Set a timer to make the notification disappear after 3 seconds
---     timer.start({ duration = 3, callback = function() notifBox:destroy() end })
-
---     return true
--- end
 
 bs.keyUp("o", function ()
-    debug("%s", config.combatOnly)
+    debug("%s", inspect(config))
+    bs.bulkAddSpells(tes3.player, magic) ---Add all spells to player
+
+    for _, spells in pairs(magic) do
+        bs.refreshSpell(tes3.player, spells.spell.id)
+    end
 
 end)
 
